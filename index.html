@@ -329,6 +329,7 @@ textarea { width: 100%; min-height: 170px; font: inherit; font-size: 0.86rem; pa
     <div class="glass chartwrap">
       <h3 style="margin-bottom:6px" id="hStates"></h3>
       <svg id="stateChart" role="img" aria-label="Drink-container share of debris by state"></svg>
+      <p class="muted" id="stateGap" style="font-size:.78rem;margin:4px 0 0"></p>
       <details><summary>Show as a table</summary><table id="stateTable"><thead><tr><th>State</th><th>Deposit since</th><th class="r">Surveys</th><th class="r">Share</th><th class="r">95% range</th></tr></thead><tbody></tbody></table></details>
     </div>
     <p class="note" id="robust"></p>
@@ -396,6 +397,8 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { SimplifyModifier } from 'three/addons/modifiers/SimplifyModifier.js';
 
 const D = JSON.parse(document.getElementById('data').textContent);
+// one set of ranges for Michigan and Ohio: the Great Lakes card and the state chart came from separate resampling runs
+for (const [st, k] of [['Michigan', 'michigan'], ['Ohio', 'ohio']]) { const row = D.states.find(d => d.state === st), loc = D.local && D.local[k]; if (row && loc) { row.bevCI = loc.bevCI; row.bevShare = loc.bevShare; } }
 const T = JSON.parse(document.getElementById('tides').textContent);
 const LAND = JSON.parse(document.getElementById('land').textContent);
 const US = JSON.parse(document.getElementById('us').textContent);
@@ -1117,7 +1120,7 @@ function unitGeo(mesh) {
 const MODEL_LIST = { sf_gull: null, sf_pelican: null, sf_sealion2k: null, sf_turtle: null, sf_bin_recycle: null, sf_bin_trash: null, sf_foam: null, sf_bag: 1, sf_cap: null, sf_pbottle: null, sf_can: null, sf_glass: null, sf_lighter: null, sf_cups: null, sf_lure: null, sf_metal: null, sf_wood: null, sf_flipflop: null, sf_shell: null, rock_09: null, wine_bottles_01: 0, plastic_bottle_gallon: null, cardboard_box_01: null, old_tyre: null, plastic_container: null, rubber_duck_toy: null, plastic_crate_02: null };
 const modelsReady = Promise.all(Object.entries(MODEL_LIST).map(([name, pick]) => loadGLB(name).then(gl => {
   const m = firstMesh(gl.scene, pick); if (!m) return;
-  const mat = m.material; mat.envMapIntensity = 1;
+  const mat = m.material; mat.envMapIntensity = 1; mat.isShared = true;
   if (mat.transmission > 0) { mat.transmission = 0; mat.transparent = true; mat.opacity = Math.min(mat.opacity, 0.7); }   // a transmission material adds a full extra render pass every frame
   MODELS[name] = { geo: unitGeo(m), mat };
 }).catch(e => console.warn('model', name, e)))).then(async () => {
@@ -1611,7 +1614,10 @@ let scene2 = null;          // per-beach scenery group
 let animals = [], eggs = [], marks = [], audio = null;
 const kmTo = (a, b, c, d) => km([a, b], [c, d]);
 function buildScenery(s) {
-  if (scene2) { beachScene.remove(scene2); scene2.traverse(o => { o.geometry?.dispose(); if (o.material && !o.material.isShared) o.material.dispose?.(); }); }
+  if (scene2) { beachScene.remove(scene2); scene2.traverse(o => {   // free what this beach made; geometry and materials shared with the model caches stay
+    if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
+    for (const m of [].concat(o.material || [])) { if (m.isShared) continue; if (m.map && m.map.isCanvasTexture) m.map.dispose(); m.dispose?.(); } }); }
+  mixers.forEach(mx => { mx.stopAllAction(); mx.uncacheRoot(mx.getRoot()); }); mixers = [];
   scene2 = new THREE.Group(); animals = []; eggs = []; marks = [];
   const reg = regionOf(s), L = LOOK[reg], rand = mulberry(s.id * 7 + 3);
   // colours of sky, fog, water, sand
@@ -2031,7 +2037,7 @@ function animModel(name, len, speed = 1) {
   const root = SkeletonUtils.clone(gl.scene), box = new THREE.Box3();
   root.updateMatrixWorld(true);
   root.traverse(o => { if (!o.isMesh) return; if (/plane1|aofloor/i.test(o.name + (o.material && o.material.name))) { o.visible = false; return; }
-    o.castShadow = true; o.frustumCulled = false; o.material = o.material.clone(); o.material.envMapIntensity = 1; box.expandByObject(o, true); });
+    o.castShadow = true; o.frustumCulled = false; o.geometry.userData.shared = true; o.material = o.material.clone(); o.material.envMapIntensity = 1; box.expandByObject(o, true); });
   const size = box.getSize(new THREE.Vector3()), s = len / Math.max(size.x, size.y, size.z);
   root.scale.setScalar(s); root.position.set(-(box.min.x + box.max.x) / 2 * s, -box.min.y * s, -(box.min.z + box.max.z) / 2 * s);
   const inner = new THREE.Group(); inner.add(root); inner.rotation.y = ANIM_LIST[name];
@@ -2371,6 +2377,8 @@ function buildEvidence() {
   const lg = sc.append('g').attr('transform', `translate(${M.l},10)`);
   [['var(--deposit)', 'Deposit state', 0], ['var(--nodeposit)', 'No deposit', 120]].forEach(([c, t, dx]) => { lg.append('circle').attr('cx', dx + 5).attr('r', 5).attr('fill', c); lg.append('text').attr('x', dx + 15).attr('dy', '0.35em').text(t); });
   lg.append('text').attr('x', 230).attr('dy', '0.35em').text('◆ Great Lakes state');
+  { const shown = new Set(S.map(d => d.state)), left = [...new Set(sites.map(x => x.state))].filter(st => !shown.has(st)).sort();
+    document.getElementById('stateGap').textContent = left.length ? `Not charted: ${left.join(', ')}, each with fewer than 30 surveys. Their surveys still count in the deposit and no-deposit totals above.` : ''; }
   document.querySelector('#stateTable tbody').innerHTML = S.slice().sort((a, b) => a.state.localeCompare(b.state)).map(d => `<tr><td>${d.state}</td><td>${d.enacted || '—'}</td><td class="r">${fmt(d.surveys)}</td><td class="r">${d.bevShare}%</td><td class="r">${d.bevCI[0]}–${d.bevCI[1]}%</td></tr>`).join('');
   const L = D.local;
   cmp(document.getElementById('cmpLocal'), [
