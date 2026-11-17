@@ -2,9 +2,11 @@
 
 An interactive look at U.S. beach litter, built for **Arbiter Hacks** (theme: *Rethinking Waste*).
 
+**Live site:** https://supersunny7.github.io/shoreline-ledger/
+
 - **Globe**: 847 beaches surveyed by NOAA's Marine Debris Monitoring and Assessment Project (MDMAP).
 - **Walk a beach**: each beach is rebuilt in 3D from its own survey data. Walk the shore, learn what each item is, and sort it into the right bin.
-- **Evidence**: across 8,119 NOAA surveys, beaches in states without a bottle deposit carry about 2.5× the share of drink containers found in deposit states. The page shows the method and its limits.
+- **Evidence**: across 8,119 NOAA surveys, beaches in states without a bottle deposit carry about 2.5× the share of drink containers found in deposit states (1.95× without Hawaii). The page shows the method and its limits.
 - **Act**: a letter to your state legislator, pre-filled with your beach's own numbers.
 
 ## Run it
