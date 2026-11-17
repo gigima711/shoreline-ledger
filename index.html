@@ -257,7 +257,7 @@ textarea { width: 100%; min-height: 170px; font: inherit; font-size: 0.86rem; pa
   </nav>
 </header>
 <section id="intro" class="ui glass" aria-label="Find a beach">
-  <div class="kicker">NOAA beach-litter surveys · 2008–2026</div>
+  <div class="kicker">NOAA beach-litter surveys · 2009–2026</div>
   <h1>Where states have no bottle deposit, drink containers make up <span id="introRatio">2.5×</span> the share of beach litter.</h1>
   <div class="fact" id="introFact">847 beaches · 8,119 surveys</div>
   <p class="sub">Walk a real beach, item by item, with the litter NOAA counted laid out at its real count.</p>
@@ -1092,7 +1092,7 @@ function unitGeo(mesh) {
   g.translate(-c.x, -b.min.y, -c.z); g.scale(1 / Math.max(s.x, s.y, s.z), 1 / Math.max(s.x, s.y, s.z), 1 / Math.max(s.x, s.y, s.z));
   g.computeBoundingBox(); return g;
 }
-const MODEL_LIST = { sf_gull: null, sf_pelican: null, sf_sealion2k: null, sf_turtle: null, sf_bin_recycle: null, sf_bin_trash: null, sf_foam: null, sf_bag: null, sf_cap: null, sf_pbottle: null, sf_can: null, sf_glass: null, sf_lighter: null, sf_cups: null, sf_lure: null, sf_metal: null, sf_wood: null, sf_flipflop: null, sf_shell: null, rock_09: null, wine_bottles_01: 0, plastic_bottle_gallon: null, cardboard_box_01: null, old_tyre: null, plastic_container: null, rubber_duck_toy: null, plastic_crate_02: null };
+const MODEL_LIST = { sf_gull: null, sf_pelican: null, sf_sealion2k: null, sf_turtle: null, sf_bin_recycle: null, sf_bin_trash: null, sf_foam: null, sf_bag: 1, sf_cap: null, sf_pbottle: null, sf_can: null, sf_glass: null, sf_lighter: null, sf_cups: null, sf_lure: null, sf_metal: null, sf_wood: null, sf_flipflop: null, sf_shell: null, rock_09: null, wine_bottles_01: 0, plastic_bottle_gallon: null, cardboard_box_01: null, old_tyre: null, plastic_container: null, rubber_duck_toy: null, plastic_crate_02: null };
 const modelsReady = Promise.all(Object.entries(MODEL_LIST).map(([name, pick]) => loadGLB(name).then(gl => {
   const m = firstMesh(gl.scene, pick); if (!m) return;
   const mat = m.material; mat.envMapIntensity = 1;
@@ -1104,7 +1104,7 @@ const LITTER_MODELS = {
   foam: [{ m: 'sf_foam', size: 0.12, flat: 0.6 }], bag: [{ m: 'sf_bag', size: 0.35, flat: 0.3 }], cap: [{ m: 'sf_cap', size: 0.035 }],
   pbottle: [{ m: 'sf_pbottle', size: 0.22, lie: true }], can: [{ m: 'sf_can', size: 0.12 }], glass: [{ m: 'sf_glass', size: 0.08 }],
   lighter: [{ m: 'sf_lighter', size: 0.08, lie: true }], cutlery: [{ m: 'sf_cups', size: 0.1 }], line: [{ m: 'sf_lure', size: 0.1, p: 0.5 }],
-  metal: [{ m: 'sf_metal', size: 0.25 }], wood: [{ m: 'sf_wood', size: 0.35 }], cloth: [{ m: 'sf_flipflop', size: 0.27 }], shell: [{ m: 'sf_shell', size: 0.07, lie: true }],
+  metal: [{ m: 'sf_metal', size: 0.25 }], wood: [{ m: 'sf_wood', size: 0.35, lie: true }], cloth: [{ m: 'sf_flipflop', size: 0.27 }], shell: [{ m: 'sf_shell', size: 0.07, lie: true }],
   gbottle: [{ m: 'wine_bottles_01', size: 0.3, lie: true }],
   jug: [{ m: 'plastic_bottle_gallon', size: 0.3, lie: 0.5 }],
   paper: [{ m: 'cardboard_box_01', size: 0.3, flat: 0.18 }],
@@ -1246,8 +1246,17 @@ canvas.addEventListener('pointerdown', e => {
   if (mode !== 'beach') return;
   const it = pickItem(e.clientX, e.clientY);
   if (it) { drag = { it, x0: e.clientX, y0: e.clientY, moving: false }; canvas.setPointerCapture(e.pointerId); }
-  else walkDrag = e.clientX;
+  else { walkDrag = e.clientX; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} }
 });
+// a gesture the browser takes over (touch scroll, alt-tab, capture lost) must not leave a walk or a drag running
+function cancelPointer() {
+  walkDrag = null;
+  if (drag) { const d = drag; drag = null; if (d.moving) { endDrag(); flyHome(d.it); } }
+}
+canvas.addEventListener('pointercancel', cancelPointer);
+canvas.addEventListener('lostpointercapture', () => { walkDrag = null; });
+addEventListener('pointerup', () => { walkDrag = null; });
+addEventListener('blur', cancelPointer);
 canvas.addEventListener('pointermove', e => {
   setMouse(e);
   if (mode === 'beach') {
@@ -1406,9 +1415,9 @@ function drawMini() {
     let k = lanes.findIndex(l => px - l >= GAP); if (k < 0) k = lanes.indexOf(Math.min(...lanes)); lanes[k] = px;
     const n = document.createElement('i'); n.style.left = px + 'px'; n.style.top = (17 + k * 7.5) + 'px';
     n.style.background = typeColor(it.t); n.title = it.t.name; n.onclick = ev => { ev.stopPropagation(); walkTo(it.home.x); setTimeout(() => showItem(it), 450); }; w.appendChild(n); });
-  mini.querySelector('.count').textContent = `Cleaned ${beach.cleaned} of ${items.length}`;
+  mini.querySelector('.count').textContent = items.length ? `Cleaned ${beach.cleaned} of ${items.length}` : 'No litter counted here';
 }
-function stepMini() { const v = mini.querySelector('.view'); if (v) v.style.left = ((walkX - 4 + BEACH_L / 2) / BEACH_L * 100) + '%'; v.style.width = (8 / BEACH_L * 100) + '%'; }
+function stepMini() { const v = mini.querySelector('.view'); if (!v) return; v.style.left = ((walkX - 4 + BEACH_L / 2) / BEACH_L * 100) + '%'; v.style.width = (8 / BEACH_L * 100) + '%'; }
 {
   const strip = mini.querySelector('.strip'); let down = false;
   const go = e => { const r = strip.getBoundingClientRect(); walkTo((e.clientX - r.left) / r.width * BEACH_L - BEACH_L / 2); };
@@ -1455,7 +1464,7 @@ function renderHud() {
     return `<button type="button" class="trow${left ? '' : ' done'}${beach.sorted.has(t.id) ? ' known' : ''}" data-t="${t.id}"><i style="background:${typeColor(t)}"></i><span>${t.name}</span><span class="num">${fmt(e.n)}</span><span class="left">${left ? left + ' on sand' : '✓'}</span></button>`; }).join('');
   const sortedN = beach.sorted.size, nT = info.types.length;
   h.innerHTML = `
-    ${beach.scene.hurt ? `<div class="note" style="border-left-color:var(--case);font-size:.8rem">An injured ${beach.scene.hurt.toLowerCase()} is on this beach. Tap it for the real news report.</div>` : ''}
+    ${beach.scene.hurt ? `<div class="note" style="border-left-color:var(--case);font-size:.8rem">A real news case from this coast: ${beach.scene.hurt}. Tap the animal for the report.</div>` : ''}
     ${s.items === 0 ? `<div class="muted" style="font-size:.84rem">No litter was counted here in ${s.surveys} NOAA survey${s.surveys > 1 ? 's' : ''}. The pebbles, driftwood and seaweed are just the natural beach.</div>` : `<div class="muted" style="font-size:.78rem">${info.total > items.length ? `The ${items.length} models on the sand keep the real mix of the ${fmt(info.total)} items found.` : 'Every model on the sand is one real item.'} Drawn larger than life so you can spot them.</div>`}
     ${cleanNote(s) ? `<div class="note good">${cleanNote(s)}</div>` : ''}
     <div class="src">Source: NOAA Marine Debris Monitoring and Assessment Project (MDMAP) · ${s.surveys} survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)} · ${fmt(s.items)} items counted${s.items && s.bevShare != null ? ` · ${s.bevShare}% drink containers` : ''}</div>
@@ -1477,7 +1486,8 @@ function hud(s, info) {
     <button class="btn" type="button" id="openEv">See the evidence and act</button>`;
   p.classList.add('on');
   document.getElementById('openEv').onclick = () => openEvidence(s);
-  ['walk', 'mini', 'bins'].forEach(id => document.getElementById(id).classList.add('on'));
+  document.getElementById('walk').textContent = items.length ? 'Click an item to learn about it · drag it into a bin to clean it up' : 'NOAA surveyors found no litter here · scroll or drag to walk the shore';
+  ['walk', 'mini', 'bins'].forEach(id => document.getElementById(id).classList.add('on')); drawMini();
 }
 const report = document.getElementById('report');
 function showReport() {
@@ -1800,7 +1810,7 @@ function showExtra(o) {
     itemCard.innerHTML = `<button class="x" type="button" aria-label="Close">×</button><div class="kicker">${o.userData.dist < 5 ? 'Found on this shore' : `Found ${Math.round(o.userData.dist)} km along this coast`}</div><h3>${title}</h3><div style="font-size:.86rem;line-height:1.45">${text}</div><div class="muted" style="font-size:.74rem">Source: <a href="${url}" target="_blank" rel="noopener">${src}</a>. Not part of the NOAA counts.</div>`;
   } else {
     const [, species, place, , , year, summary, outlet, url] = o.userData.news, d = o.userData.dist;
-    itemCard.innerHTML = `<button class="x" type="button" aria-label="Close">×</button><div class="kicker">Real case · ${d < 3 ? 'at this beach' : `${Math.round(d)} km from here`}</div><h3>${species}, ${place}${year ? `, ${year}` : ''}</h3><div style="font-size:.86rem;line-height:1.45">${summary}</div><div class="note" style="font-size:.8rem">Fishing line, rope, nets and strapping are on this beach's litter list. Line-recycling bins and cutting loops before throwing gear away prevent cases like this.</div><a class="newsBtn" href="${url}" target="_blank" rel="noopener">Read the news report and see its photos · ${outlet} ↗</a>${(ph => ph ? `<figure class="casePh"><img src="${ASSET}photos/case_${ph[0]}.jpg" alt="${ph[1]}" loading="lazy"><figcaption>A similar case, not the animal in this report: ${ph[1]} Photo: ${ph[2]}, ${ph[3]}, <a href="${ph[4]}" target="_blank" rel="noopener">Wikimedia Commons</a>.</figcaption></figure>` : '')(casePhoto(o.userData.news))}<div class="muted" style="font-size:.74rem">The 3D animal stands in for the one in the report. News photos belong to the outlet, so they open on its site.</div>`;
+    itemCard.innerHTML = `<button class="x" type="button" aria-label="Close">×</button><div class="kicker">Real case · ${d < 3 ? 'at this beach' : `${Math.round(d)} km from here`}</div><h3>${species}, ${place}${year ? `, ${year}` : ''}</h3><div style="font-size:.86rem;line-height:1.45">${summary}</div><div class="note" style="font-size:.8rem">${beach && beach.site.items ? 'Fishing line, rope, nets and strapping turn up in NOAA counts along this coast.' : 'Fishing line, rope, nets and strapping are what entangle animals like this.'} Line-recycling bins and cutting loops before throwing gear away prevent cases like this.</div><a class="newsBtn" href="${url}" target="_blank" rel="noopener">Read the news report and see its photos · ${outlet} ↗</a>${(ph => ph ? `<figure class="casePh"><img src="${ASSET}photos/case_${ph[0]}.jpg" alt="${ph[1]}" loading="lazy"><figcaption>A similar case, not the animal in this report: ${ph[1]} Photo: ${ph[2]}, ${ph[3]}, <a href="${ph[4]}" target="_blank" rel="noopener">Wikimedia Commons</a>.</figcaption></figure>` : '')(casePhoto(o.userData.news))}<div class="muted" style="font-size:.74rem">The 3D animal stands in for the one in the report. News photos belong to the outlet, so they open on its site.</div>`;
   }
   itemCard.classList.toggle('case', !!o.userData.news); itemCard.classList.add('on'); document.body.classList.add('cardOn', 'acted'); itemCard.querySelector('.x').onclick = hideCard; sfx('tap');
 }
@@ -2115,7 +2125,7 @@ function stepFauna(t) {
   fauFrame = (fauFrame + 1) % 2;
   animals.forEach(a => { const u = a.userData; if (!u.mixer) return;   // far-off animals animate at half rate
     if (a.position.z < -15) { if (fauFrame === 0) u.mixer.update(dt * 2); } else u.mixer.update(dt); });
-  animals.forEach(a => { try { stepAnimal(a, t, dt); } catch (e) { a.userData.brain = null; } });
+  animals.forEach(a => { try { stepAnimal(a, t, dt); } catch (e) { logOnce('animal ' + a.userData.brain, e); } });
 }
 function stepAnimal(a, t, dt) { { const u = a.userData, b = u.brain; if (!b) return;
     const ph = t + (u.phase || 0) * 3;
@@ -2156,7 +2166,7 @@ function stepAnimal(a, t, dt) { { const u = a.userData, b = u.brain; if (!b) ret
       if (!u.hd) u.hd = u.yaw || 0; u.hd += Math.sin(t * 0.13 + (u.phase || 0)) * 0.004;
       if (!down) { a.position.x += Math.cos(u.hd) * 0.12 * dt; a.position.z = Math.max(-16, Math.min(-6, a.position.z - Math.sin(u.hd) * 0.12 * dt)); }
       a.position.y = down ? lerpA(a.position.y, -1, 0.1) : lerpA(a.position.y, -0.08 + Math.sin(t * 1.4) * 0.02, 0.1);
-      if (cyc > 25.9 && cyc < 26.1) a.position.x = u.hdome.x + (Math.random() - 0.5) * 6;
+      if (cyc > 25.9 && cyc < 26.1) a.position.x = (u.home ? u.home.x : u.homeX ?? a.position.x) + (Math.random() - 0.5) * 6;
       a.rotation.y = u.hd; a.rotation.z = Math.sin(t * 1.1) * 0.03;
     }
     else if (b === 'swimmer') {   // turtle / manatee / tangled whale: paddles along, surfaces to breathe
@@ -2198,7 +2208,7 @@ function locatorSVG(s) {
     const lp = d3.geoMercator().fitExtent([[24, 24], [W - 24, H - 24]], { type: 'MultiPoint', coordinates: [[s.lon, s.lat], [-154.8, 18.9], [-160.3, 22.3]] });
     path = d3.geoPath(lp); p = lp([s.lon, s.lat]); st = topojson.feature(LAND, Object.values(LAND.objects)[0]).features || [topojson.feature(LAND, Object.values(LAND.objects)[0])];
   }
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Location of ${label(s)}">${st.map(f => `<path d="${path(f)}" fill="${!f.properties || f.properties.name === s.state || !f.properties.name ? '#3a5466' : '#1d2d39'}" stroke="#0d1a24" stroke-width=".6"/>`).join('')}${p ? `<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#fff"/>` : ''}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Location of ${label(s)}">${st.map(f => [f, path(f)]).filter(([, d]) => d).map(([f, d]) => `<path d="${d}" fill="${!f.properties || f.properties.name === s.state || !f.properties.name ? '#3a5466' : '#1d2d39'}" stroke="#0d1a24" stroke-width=".6"/>`).join('')}${p ? `<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#fff"/>` : ''}</svg>`;
 }
 function beachIntro(s) {
   const ph = PHOTOS[s.id];
@@ -2207,7 +2217,7 @@ function beachIntro(s) {
     ${ph ? `<figure><div class="ph"><img src="${ph.src}" alt="Photo of the shore near ${label(s)}"><span class="tag">Real photo</span></div>
       <figcaption>Taken near this NOAA survey site. Location reference only, not from a survey day; it says nothing about litter. Photo: ${ph.a} · ${ph.l} · <a href="${ph.page}" target="_blank" rel="noopener">${ph.site}</a></figcaption></figure>`
     : `<div class="loc">${locatorSVG(s)}</div><div class="muted" style="font-size:.74rem">No verified photo of this beach yet, so we show where it is instead.</div>`}
-    <div style="font-size:.88rem;line-height:1.45">The beach behind this card is <b>rebuilt from NOAA survey data</b>: the litter on the sand keeps the real mix of the ${fmt(s.items)} items counted here${s.surveys > 1 ? ` across ${s.surveys} surveys` : ''} (${yrs(s)}). Sky, sand and landmarks follow the ${LOOK[regionOf(s)].label.toLowerCase()}, not this exact spot.</div>
+    <div style="font-size:.88rem;line-height:1.45">The beach behind this card is <b>rebuilt from NOAA survey data</b>: the litter on the sand keeps the real mix of the ${fmt(s.items)} items counted here${s.surveys > 1 ? ` across ${s.surveys} surveys` : ''} (${yrs(s)}). Sky, sand and landmarks follow the ${LOOK[regionOf(s)].label}, not this exact spot.</div>
     <div class="row2"><button class="btn" type="button" id="intro2Go">Walk this beach</button></div>`;
   const img = intro2.querySelector('img'); if (img) img.onerror = () => { const f = img.closest('figure'); f.outerHTML = `<div class="loc">${locatorSVG(s)}</div><div class="muted" style="font-size:.74rem">The photo could not load here.</div>`; };
   intro2.classList.add('on');
@@ -2215,7 +2225,11 @@ function beachIntro(s) {
   intro2.querySelector('.x').onclick = close; document.getElementById('intro2Go').onclick = close;
 }
 // globe -> beach in about 2 s: dive at the coast, pass through the region's own haze (place card shows), beach comes out of the same haze
+let entering = false;
 async function enterBeach(s) {
+  if (entering || !s) return; entering = true;
+  document.getElementById('evidence').classList.remove('on'); setNav('navMap');
+  try {
   const L = LOOK[regionOf(s)], fogCol = L.fog;
   fadeCard.innerHTML = `<div class="kicker">${L.label} · ${s.state}</div><b>${label(s)}</b><span>${fmt(s.items)} items · ${s.surveys} NOAA survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)}</span>`;
   fade.style.background = fogCol; fade.classList.add('dive');
@@ -2230,7 +2244,11 @@ async function enterBeach(s) {
   ['intro', 'card'].forEach(id => document.getElementById(id).style.display = 'none');
   hud(s, info);
   beachIntro(s);
-  requestAnimationFrame(() => { fade.style.opacity = 0; setTimeout(() => { fade.classList.remove('dive'); fade.style.background = ''; }, 800); });
+  } catch (err) { logOnce('enterBeach', err); }
+  finally {
+    entering = false;
+    requestAnimationFrame(() => { fade.style.opacity = 0; setTimeout(() => { fade.classList.remove('dive'); fade.style.background = ''; }, 800); });
+  }
 }
 async function exitBeach() {
   fade.style.opacity = 1; await wait(650); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -2263,12 +2281,12 @@ function buildEvidence() {
     { ...dep, v: C.deposit.capRatio, ci: C.deposit.capCI, n: C.deposit.surveys, sites: C.deposit.sites }], 12, '');
   const med = a => { const b = a.slice().sort((x, y) => x - y), n = b.length; return n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2; };
   const depS = D.states.filter(d => d.deposit), nonS = D.states.filter(d => !d.deposit);
-  const mDep = +med(depS.map(d => d.bevShare)).toFixed(1), mNon = +med(nonS.map(d => d.bevShare)).toFixed(1);
+  const mDep = +med(depS.map(d => d.bevShare)).toFixed(1), mNon = +med(nonS.map(d => d.bevShare)).toFixed(1), f1 = v => v.toFixed(1);
   document.getElementById('evHead').textContent = `Where states have no bottle deposit, drink containers make up ${(+C.ratio).toFixed(1)}× the share of beach litter`;
   document.getElementById('evFact').textContent = `${fmt(sites.length)} beaches · ${fmt(C.deposit.surveys + C.noDeposit.surveys)} NOAA surveys, ${D.meta.years[0]}–${D.meta.years[1]} · ratio ${C.ratio}×, 95% CI ${C.ratioCI[0]}–${C.ratioCI[1]}×`;
   document.getElementById('hShare').textContent = `No-deposit states: ${C.noDeposit.bevShare}% of beach debris is drink containers. Deposit states: ${C.deposit.bevShare}%.`;
   document.getElementById('hCaps').textContent = `Caps stay, bottles go: ${C.deposit.capRatio} caps per bottle in deposit states, ${C.noDeposit.capRatio} elsewhere`;
-  document.getElementById('hStates').textContent = `State by state: the typical no-deposit state is at ${mNon}%, the typical deposit state at ${mDep}%`;
+  document.getElementById('hStates').textContent = `State by state: the typical no-deposit state is at ${f1(mNon)}%, the typical deposit state at ${f1(mDep)}%`;
   const odd1 = depS.filter(d => d.bevShare > mNon).sort((a, b) => b.bevShare - a.bevShare), odd2 = nonS.filter(d => d.bevShare < mDep).sort((a, b) => a.bevShare - b.bevShare);
   const nm = l => l.map(d => `${d.state} (${d.bevShare}%)`).join(', ');
   document.getElementById('limits').innerHTML = `
@@ -2363,7 +2381,7 @@ I'm writing about ${label(s)} in ${s.state}. NOAA volunteers surveyed it ${s.sur
 
 Across ${total} NOAA beach surveys, beaches in states without a bottle deposit carry ${C.ratio} times the share of drink containers found in deposit states (${C.noDeposit.bevShare}% vs ${C.deposit.bevShare}% of all debris). Caps, which earn no deposit, stay on deposit-state beaches while bottles disappear, which points to the deposit itself.
 
-${dep ? `${s.state} has had a bottle deposit since ${dep}. Please protect it and modernize it: raise the deposit to keep pace with inflation and cover more container types.` : `${s.state} has no bottle deposit. Ten states do, some since the 1970s. Please support a beverage container deposit law for ${s.state}.`}
+${dep ? `${s.state} has had a bottle deposit since ${dep}. Please protect it and modernize it: raise the deposit to keep pace with inflation and cover more container types.` : `${s.state} has no bottle deposit. ${['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve'][Object.keys(D.depositStates).length] || Object.keys(D.depositStates).length} states do, some since the 1970s. Please support a beverage container deposit law for ${s.state}.`}
 
 Sincerely,
 [Your name, your town]`;
@@ -2387,6 +2405,7 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   [globeCam, beachCam].forEach(c => { c.aspect = innerWidth / innerHeight; c.updateProjectionMatrix(); });
   sizeLabels();
+  if (mode === 'beach' && beach) drawMini();
 });
 const clock = new THREE.Clock();
 // beach quality: always full resolution (the user wants it sharp); on a slow machine only the shadow map gets coarser
@@ -2399,7 +2418,13 @@ function tuneBeachQuality(now) {
   if (ms > 26 && !qShadowsCut) { qShadowsCut = true; bSun.shadow.mapSize.set(1024, 1024); if (bSun.shadow.map) { bSun.shadow.map.dispose(); bSun.shadow.map = null; } }
 }
 window.__quality = () => ({ pr: renderer.getPixelRatio(), shadowsCut: qShadowsCut });
+const __logged = new Set();
+function logOnce(tag, err) { const k = tag + ':' + (err && err.message); if (__logged.has(k)) return; __logged.add(k); console.error(tag, err); }
 function frame(now) {
+  requestAnimationFrame(frame);
+  try { frameBody(now); } catch (err) { logOnce('frame', err); }
+}
+function frameBody(now) {
   const t = clock.getElapsedTime();
   if (mode === 'globe') {
     stepFlight(now);
@@ -2425,14 +2450,13 @@ function frame(now) {
   } else {
     walkX += (walkTarget - walkX) * 0.06;
     look = 0;
-    setBeachCam(); stepMini(); for (const f of [() => stepBounce(now), () => stepHome(now), () => stepMarker(now), () => stepScene(t)]) { try { f(); } catch (err) { if (!window.__stepErr) { window.__stepErr = 1; console.error(err); } } }
+    setBeachCam(); stepMini(); for (const f of [() => stepBounce(now), () => stepHome(now), () => stepMarker(now), () => stepScene(t)]) { try { f(); } catch (err) { logOnce('step', err); } }
     bSun.target.position.set(walkX, 0, 4); bSun.position.set(walkX - 20, 14, -18);
     if (!reduceMotion) animateWater(t);
     renderer.toneMappingExposure = beachExposure;
     renderer.render(beachScene, beachCam);
     tuneBeachQuality(now);
   }
-  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 
