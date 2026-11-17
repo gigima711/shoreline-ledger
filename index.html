@@ -393,6 +393,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { SimplifyModifier } from 'three/addons/modifiers/SimplifyModifier.js';
 
 const D = JSON.parse(document.getElementById('data').textContent);
 const T = JSON.parse(document.getElementById('tides').textContent);
@@ -620,6 +621,7 @@ tdots.visible = tRim.visible = false;            // volunteer data is drawn as s
 const heat = (() => {
   // shoreline cleanups only: every ocean shore, plus lake and river shores within ~30 km of a NOAA beach; inland parks and streets are left out. Covers the lower 48, Alaska and Hawaii.
   const lon0 = -172, lon1 = -64, lat0 = 17, lat1 = 63, w = 6144, h = Math.round(w * (lat1 - lat0) / (lon1 - lon0));
+  const paint = () => {   // built the first time shading is switched on: a 6k canvas is too costly to make for every visitor
   const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
   x.fillStyle = '#000'; x.fillRect(0, 0, w, h); x.globalCompositeOperation = 'lighter';
   const rad = 16;
@@ -637,15 +639,16 @@ const heat = (() => {
     for (let i = 0; i < d.length; i += 4) { const v = d[i] / 255, o = 255 * 0.5 * (1 - Math.exp(-3.2 * v)); d[i] = d[i + 1] = d[i + 2] = o; }
     x2.putImageData(im, 0, 0);
   }
-  const tex = new THREE.CanvasTexture(c2); tex.anisotropy = 8;
+  const tex = new THREE.CanvasTexture(c2); tex.anisotropy = 8; return tex;
+  };
   const geo = new THREE.SphereGeometry(R * 1.0009, 256, 128, (lon0 + 180) * Math.PI / 180, (lon1 - lon0) * Math.PI / 180, (90 - lat1) * Math.PI / 180, (lat1 - lat0) * Math.PI / 180);
   // shading color: ?shade=white|violet|teal|ink (default white)
   const SH = { white: ['#fff6e4', 0.55, true], violet: ['#7b5cff', 0.85, false], teal: ['#159c86', 0.8, false], ink: ['#1b2838', 0.75, false] };
   const pick = SH[new URLSearchParams(location.search).get('shade')] || SH.white;
-  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: pick[0], alphaMap: tex, transparent: true, opacity: pick[1], depthWrite: false, toneMapped: false, blending: pick[2] ? THREE.AdditiveBlending : THREE.NormalBlending }));
-  m.renderOrder = 2; m.visible = false; m.userData.base = pick[1]; globeScene.add(m); return m;
+  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: pick[0], alphaMap: null, transparent: true, opacity: pick[1], depthWrite: false, toneMapped: false, blending: pick[2] ? THREE.AdditiveBlending : THREE.NormalBlending }));
+  m.renderOrder = 2; m.visible = false; m.userData.base = pick[1]; m.userData.paint = paint; globeScene.add(m); return m;
 })();
-document.getElementById('tidesOn').addEventListener('change', e => { heat.visible = e.target.checked; needCluster = true; });
+document.getElementById('tidesOn').addEventListener('change', e => { if (e.target.checked && !heat.material.alphaMap) { heat.material.alphaMap = heat.userData.paint(); heat.material.needsUpdate = true; } heat.visible = e.target.checked; needCluster = true; });
 // ---- declutter: greedy screen-space merge, heaviest point first ----
 const _cp = new THREE.Vector3();
 function clusterize(n, P, weight, r, avoid = []) {
@@ -869,12 +872,12 @@ beachScene.environment = envTex;
 const SKY_TOP = new THREE.Color('#2a4a66'), SKY_HOR = new THREE.Color('#e3b38f');   // kept for distant-haze colours
 // physical sky (three.js Sky, MIT); it also lights the scene through a PMREM environment map
 const sky = new Sky(); sky.scale.setScalar(3000); beachScene.add(sky);
-const sunDir = new THREE.Vector3();
+const sunDir = new THREE.Vector3(); let sunH = 14;
 const skyEnvScene = new THREE.Scene(); const skyForEnv = new Sky(); skyForEnv.scale.setScalar(3000); skyEnvScene.add(skyForEnv);
 let skyEnvRT = null;
 function setSky(p) {
   const phi = THREE.MathUtils.degToRad(90 - p.elev), th = THREE.MathUtils.degToRad(p.az);
-  sunDir.setFromSphericalCoords(1, phi, th);
+  sunDir.setFromSphericalCoords(1, phi, th); sunH = 27 * Math.tan(THREE.MathUtils.degToRad(Math.min(70, Math.max(12, p.elev))));
   for (const sk of [sky, skyForEnv]) { const u = sk.material.uniforms;
     u.turbidity.value = p.turb; u.rayleigh.value = p.ray; u.mieCoefficient.value = p.mie ?? 0.005; u.mieDirectionalG.value = 0.8; u.sunPosition.value.copy(sunDir);
     if (u.cloudCoverage) { u.cloudCoverage.value = p.cloud ?? 0.3; u.cloudDensity.value = p.cloudDensity ?? 0.5; } }
@@ -1021,13 +1024,13 @@ const TYPES = [
     bin: 'trash', why: 'Chip bags and candy wrappers are layers of plastic and metal foil glued together. No program can separate them.', policy: 'epr' },
   { id: 'cap', name: 'Bottle caps and lids', keys: ['plastic:bottle-or-container-caps'], colors: ['#3a6ea8', '#b8433f', '#e8e6e1', '#3f8f63', '#d8ab3c'], make: () => new THREE.CylinderGeometry(0.03, 0.03, 0.022, 18), mat: { roughness: 0.4 },
     bin: 'trash', why: 'A loose cap is too small for sorting machines and falls through the screens. Screwed back onto its bottle, it gets recycled with it. Deposits pay for bottles but not caps, which is why caps stay on deposit-state beaches.', policy: 'deposit' },
-  { id: 'pbottle', name: 'Plastic drink bottles', keys: ['plastic:beverage-bottles'], colors: ['#cfe8f2', '#d9f0e4'], make: () => lathe(BOTTLE), mat: { roughness: 0.05, transmission: 0.85, thickness: 0.05, ior: 1.45, transparent: true, opacity: 0.9 }, physical: true,
+  { id: 'pbottle', name: 'Plastic drink bottles', keys: ['plastic:beverage-bottles'], colors: ['#cfe8f2', '#d9f0e4'], make: () => lathe(BOTTLE), mat: { roughness: 0.05, transparent: true, opacity: 0.62, metalness: 0.1 }, physical: true,
     dep: true, why: 'Empty drink bottles are taken by almost every recycling program. Where a deposit applies, returning it pays you back, and that refund is what keeps bottles off beaches.', policy: 'deposit' },
   { id: 'can', name: 'Drink cans', keys: ['metal:aluminum-tin-cans'], colors: ['#c0c6cc', '#c8102e', '#1d4f91', '#e5a823'], make: () => { const g = new THREE.CylinderGeometry(0.033, 0.033, 0.12, 20, 4); const p = g.attributes.position; for (let i = 0; i < p.count; i++) if (Math.abs(p.getY(i)) < 0.02) p.setX(i, p.getX(i) * 0.8); g.computeVertexNormals(); return g.rotateZ(Math.PI / 2); }, mat: { roughness: 0.25, metalness: 1 },
     dep: true, why: 'Aluminum is the most valuable thing in a recycling bin and can be recycled endlessly. Where a deposit applies, return it for cash.', policy: 'deposit' },
-  { id: 'gbottle', name: 'Glass bottles and jars', keys: ['glass:beverage-bottles', 'glass:jars'], colors: ['#2e6b3a', '#6b3a1e', '#d8eef0'], make: () => lathe(BOTTLE, 1.15), mat: { roughness: 0.04, transmission: 0.6, thickness: 0.2, ior: 1.5, transparent: true, opacity: 0.92 }, physical: true,
+  { id: 'gbottle', name: 'Glass bottles and jars', keys: ['glass:beverage-bottles', 'glass:jars'], colors: ['#2e6b3a', '#6b3a1e', '#d8eef0'], make: () => lathe(BOTTLE, 1.15), mat: { roughness: 0.04, transparent: true, opacity: 0.62, metalness: 0.1 }, physical: true,
     dep: true, why: 'Whole glass bottles and jars are recyclable in most places. Drink bottles carry a deposit where one applies.', policy: 'deposit' },
-  { id: 'glass', name: 'Broken glass', keys: ['glass:fragments', 'glass:other'], colors: ['#2e6b3a', '#6b3a1e', '#cfe6e6'], make: () => new THREE.TetrahedronGeometry(0.035, 0).scale(1, 0.35, 1), mat: { roughness: 0.05, transmission: 0.6, thickness: 0.05, ior: 1.5, transparent: true, opacity: 0.9 }, physical: true,
+  { id: 'glass', name: 'Broken glass', keys: ['glass:fragments', 'glass:other'], colors: ['#2e6b3a', '#6b3a1e', '#cfe6e6'], make: () => new THREE.TetrahedronGeometry(0.035, 0).scale(1, 0.35, 1), mat: { roughness: 0.05, transparent: true, opacity: 0.62, metalness: 0.1 }, physical: true,
     bin: 'trash', why: 'Shards are a hazard to sorting-line workers. Wrap them and put them in the trash.', policy: 'deposit' },
   { id: 'butt', name: 'Cigarette butts', keys: ['plastic:cigarettes', 'plastic:cigar-tips'], colors: ['#e9dfc9', '#d79a5a'], make: () => new THREE.CylinderGeometry(0.0045, 0.0045, 0.03, 8).rotateZ(Math.PI / 2), mat: { roughness: 0.9 }, scale: 1.7,
     bin: 'trash', why: 'Filters are plastic (cellulose acetate), not cotton. They leach nicotine and metals into the water. Always trash, never the sand or a storm drain.', policy: 'smoke' },
@@ -1071,7 +1074,7 @@ const typeColor = t => t.colors[0] === '#f5f3ee' || t.colors[0] === '#f2f0ea' ||
 function addNature(group, rand) {
   const add = (geo, n, colors, place, rough = 0.9) => {
     const m = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ roughness: rough }), n);
-    m.castShadow = m.receiveShadow = true;
+    m.castShadow = n < 300; m.receiveShadow = true;   // a 1,400-blade dune-grass field in the shadow pass costs more than it shows
     for (let i = 0; i < n; i++) { const [x, z, sc, ry] = place(); tmpM.compose(new THREE.Vector3(x, sandHeight(x, z) - 0.01, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rand() * 0.4, ry, rand() * 0.4)), new THREE.Vector3(sc, sc * (0.5 + rand() * 0.4), sc)); m.setMatrixAt(i, tmpM); m.setColorAt(i, tmpC.set(colors[Math.floor(rand() * colors.length)])); }
     group.add(m);
   };
@@ -1115,8 +1118,13 @@ const MODEL_LIST = { sf_gull: null, sf_pelican: null, sf_sealion2k: null, sf_tur
 const modelsReady = Promise.all(Object.entries(MODEL_LIST).map(([name, pick]) => loadGLB(name).then(gl => {
   const m = firstMesh(gl.scene, pick); if (!m) return;
   const mat = m.material; mat.envMapIntensity = 1;
+  if (mat.transmission > 0) { mat.transmission = 0; mat.transparent = true; mat.opacity = Math.min(mat.opacity, 0.7); }   // a transmission material adds a full extra render pass every frame
   MODELS[name] = { geo: unitGeo(m), mat };
-}).catch(e => console.warn('model', name, e)))).then(() => Object.keys(MODELS));
+}).catch(e => console.warn('model', name, e)))).then(async () => {
+  const M = MODELS.rock_09;   // the scan is 6k triangles and headlands use dozens; make one lighter copy once
+  if (M) try { const t0 = performance.now(), n = M.geo.attributes.position.count; M.lowGeo = await new SimplifyModifier().modify(M.geo, Math.floor(n * 0.8)); M.lowGeo.computeVertexNormals(); window.__rockSimplify = [n, M.lowGeo.attributes.position.count, M.lowGeo.index ? M.lowGeo.index.count / 3 : 0, Math.round(performance.now() - t0)]; } catch (e) { window.__rockSimplify = String(e); }
+  return Object.keys(MODELS);
+});
 fetch(ASSET + 'sky/colors.json').then(r => r.json()).then(j => Object.assign(SKYCOL, j)).catch(() => {});
 // litter types that have a real model: which model, its real longest side in metres, and how it lies
 const LITTER_MODELS = {
@@ -1143,7 +1151,7 @@ function litterMesh(t, rand) {
 }
 function rockGeo(rand) {
   const M = MODELS.rock_09; if (!M) return null;
-  const g = M.geo.clone(); g.rotateY(rand() * 6.28); return g;
+  const g = (M.lowGeo || M.geo).clone(); g.rotateY(rand() * 6.28); return g;
 }
 // sand: Poly Haven "Sand 03", tinted per region
 let sandMaps = null;
@@ -1196,7 +1204,10 @@ function placeDebris(s) {
       const m = litterMesh(t, rand) || new THREE.Mesh(geos[i % 2], new Mat({ ...t.mat, color: t.colors[Math.floor(rand() * t.colors.length)], envMapIntensity: 1 }));
       const x = -BEACH_L / 2 + 4 + rand() * (BEACH_L - 8);
       const z = rand() < 0.65 ? 1.1 + Math.min(2.2, Math.abs(gauss(rand)) * 1.1) : 1.6 + rand() * 1.9;    // wrack line, then a little higher up; all in view
-      const sc = (t.scale || 1) * (0.85 + rand() * 0.4) * 2.5;                            // 2.5x life size so they read on screen
+      // small things are drawn up to 2.5x life size so they read on screen; big things (jugs, tyres, crates) stay close to life size next to the animals
+      const life = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3()).length() * (t.scale || 1);
+      const boost = THREE.MathUtils.clamp(2.5 - (life - 0.12) / 0.4 * 1.3, 1.2, 2.5);
+      const sc = (t.scale || 1) * (0.85 + rand() * 0.4) * boost;
       m.position.set(x, sandHeight(x, z) + (m.userData.real ? -0.012 * sc : 0.01 * sc - rand() * 0.006 * sc), z);   // resting on the sand, slightly settled
       m.rotation.set(m.userData.real ? rand() * 0.16 - 0.08 : rand() * 0.6 - 0.3, rand() * Math.PI * 2, m.userData.real ? rand() * 0.16 - 0.08 : rand() * 0.6 - 0.3); m.scale.setScalar(sc);
       m.castShadow = m.receiveShadow = true;
@@ -1559,7 +1570,7 @@ const LOOK = {   // neutral daytime by region; sky = three.js Sky settings (sun 
   lakes:     { sky: ['#5f87a8', '#c9d6dd'], fog: '#c9d6dd', water: '#2f6f78', sand: '#ecd7b0', waves: 0.5, label: 'Great Lakes shore', sp: { elev: 38, az: -35, turb: 4, ray: 1.2, cloud: 0.45 } },
   northeast: { sky: ['#6c7f8f', '#c3ccd2'], fog: '#c3ccd2', water: '#24505c', sand: '#e2cda6', waves: 1.0, label: 'Atlantic shore', sp: { elev: 28, az: -30, turb: 9, ray: 1.8, cloud: 0.8, cloudDensity: 0.7, sunI: 1.4, hemiI: 0.5, exposure: 0.5 } },
   southeast: { sky: ['#4f86b5', '#d4dee5'], fog: '#d4dee5', water: '#24636c', sand: '#f0dfbd', waves: 0.9, label: 'Atlantic shore', sp: { elev: 42, az: -30, turb: 3, ray: 1.0, cloud: 0.3 } },
-  gulf:      { sky: ['#6b93b3', '#d9dccf'], fog: '#d9dccf', water: '#2e6f6c', sand: '#f4e6c8', waves: 0.65, label: 'Gulf of Mexico shore', sp: { elev: 48, az: -30, turb: 10, ray: 1.5, mie: 0.008, cloud: 0.35, sunColor: '#fff0d6' } },
+  gulf:      { sky: ['#6b93b3', '#d9dccf'], fog: '#d9dccf', water: '#2e6f6c', sand: '#f4e6c8', waves: 0.65, label: 'Gulf of Mexico shore', sp: { elev: 13, az: -30, turb: 10, ray: 1.5, mie: 0.008, cloud: 0.35, sunColor: '#ffcf9a' } },
   pacific:   { sky: ['#4c7ea8', '#cdd9e0'], fog: '#cdd9e0', water: '#1f4e5c', sand: '#dcc59e', waves: 1.25, label: 'Pacific shore', sp: { elev: 24, az: -40, turb: 3, ray: 1.2, cloud: 0.25, sunColor: '#ffe9cc' } },
   pnw:       { sky: ['#7a8a95', '#b9c3c8'], fog: '#b9c3c8', water: '#203f48', sand: '#cdb894', waves: 1.1, label: 'Pacific Northwest shore', sp: { elev: 20, az: -40, turb: 14, ray: 2.6, mie: 0.02, cloud: 0.75, cloudDensity: 0.6, sunI: 1.1, hemiI: 0.45, exposure: 0.5 } },
   alaska:    { sky: ['#73858f', '#bcc6cc'], fog: '#bcc6cc', water: '#1f3e47', sand: '#a99f8e', waves: 0.9, label: 'Alaska shore', sp: { elev: 14, az: -45, turb: 7, ray: 2.0, cloud: 0.75, sunI: 1.3, hemiI: 0.45, exposure: 0.5, sunColor: '#e8eef5' } },
@@ -1635,17 +1646,20 @@ function buildScenery(s) {
     g.position.set(x, sandHeight(x, z), z); g.rotation.y = rand() * 6; g.traverse(m => m.castShadow = true); return g; };
   const ridge = (color, y0, amp, z, seed) => { const pts = [new THREE.Vector2(-260, -5)]; for (let i = 0; i <= 40; i++) pts.push(new THREE.Vector2(-260 + i * 13, y0 + amp * Math.abs(Math.sin(i * 0.37 + seed) + 0.5 * Math.sin(i * 1.1 + seed * 2)))); pts.push(new THREE.Vector2(260, -5));
     const m = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(pts)), hazy(color)); m.position.z = z; return m; };
-  const endX = BEACH_L / 2 + 5;
-  if (reg === 'lakes') { scene2.add(jetty(endX, 14)); scene2.add(lighthouse(endX, -17, false, true)); }
-  if (reg === 'northeast') { scene2.add(jetty(-endX, 10)); scene2.add(lighthouse(-endX - 6, 3.5, false, false)); }
-  if (reg === 'southeast') { scene2.add(pier(endX, 40)); scene2.add(lighthouse(-endX - 8, 4, true, false)); }
-  if (reg === 'gulf') { scene2.add(pier(endX, 36)); [-1, 1].forEach(sd => scene2.add(palm(sd * (BEACH_L / 2 - 1), 5.2))); if (['Texas', 'Louisiana'].includes(s.state)) for (let k = 0; k < 3; k++) { const pl = new THREE.Group(); const t = new THREE.Color(L.fog).lerp(new THREE.Color('#3a3f46'), 0.5);
+  const endX = BEACH_L / 2 + 5, nearX = BEACH_L / 2 + 1;
+  const islet = (x, z, trees) => { const g = new THREE.Group();
+    const mound = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 12).scale(5.5, 0.55, 3.2), mat(new THREE.Color(L.sand).multiplyScalar(0.72), 1)); mound.position.set(x, -0.28, z); mound.receiveShadow = true; g.add(mound);
+    trees.forEach(([dx, dz, h]) => { const p = palm(0, 0, h); p.position.set(x + dx, 0.12, z + dz); g.add(p); }); return g; };
+  if (reg === 'lakes') { scene2.add(jetty(-27, 5).translateZ(-57)); scene2.add(lighthouse(-27, -60, false, true)); }
+  if (reg === 'northeast') { scene2.add(jetty(-27, 5).translateZ(-57)); scene2.add(lighthouse(-27, -60, false, false)); }
+  if (reg === 'southeast') { scene2.add(pier(nearX - 2, 40)); scene2.add(jetty(-27, 5).translateZ(-57)); scene2.add(lighthouse(-27, -60, true, false)); }
+  if (reg === 'gulf') { scene2.add(pier(-nearX + 1, 36)); scene2.add(islet(31, -45, [[-2, 0.5, 4.6], [0.4, -0.6, 5.4], [2.6, 0.4, 4.2]])); if (['Texas', 'Louisiana'].includes(s.state)) for (let k = 0; k < 3; k++) { const pl = new THREE.Group(); const t = new THREE.Color(L.fog).lerp(new THREE.Color('#3a3f46'), 0.5);
       const d = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 6), hazy(t)); d.position.y = 5; pl.add(d); [-2, 2].forEach(a => [-2, 2].forEach(b => { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5, 0.4), hazy(t)); leg.position.set(a, 2, b); pl.add(leg); }));
       const der = new THREE.Mesh(new THREE.ConeGeometry(1.2, 6, 4), hazy(t)); der.position.y = 8.6; pl.add(der); pl.scale.setScalar(0.4); pl.position.set(-90 + k * 80 + rand() * 20, -0.9, -230); scene2.add(pl); } }
   if (reg === 'pacific' || reg === 'pnw') { const head = new THREE.Group(); for (let i = 0; i < 26; i++) { const rg = rockGeo(rand), r = rg ? new THREE.Mesh(rg, MODELS.rock_09.mat) : new THREE.Mesh(new THREE.DodecahedronGeometry(2 + rand() * 3, 1), mat('#5e5650', 0.95)); if (rg) r.scale.setScalar(4 + rand() * 5); r.position.set(-endX - 4 - rand() * 8, rand() * 4, 6 - i * 1.8); if (rg) { r.scale.y *= 0.5 + rand() * 0.6; r.position.y -= 1.5; } else r.scale.y = 1 + rand(); head.add(r); } scene2.add(head);
     for (let k = 0; k < 3; k++) { const rg = rockGeo(rand), st = rg ? new THREE.Mesh(rg, MODELS.rock_09.mat) : new THREE.Mesh(new THREE.DodecahedronGeometry(1.6 + rand(), 1).scale(1, 1.8 + rand(), 1), mat('#55504b', 0.95)); if (rg) st.scale.set(3.5 + rand() * 2, 6 + rand() * 4, 3.5 + rand() * 2); st.position.set(-30 + k * 26 + rand() * 8, 0.8, -55 - rand() * 25); if (rg) st.position.y = -1.2; scene2.add(st); }
   }
-  if (reg === 'hawaii') { [-1, 1].forEach(sd => scene2.add(palm(sd * (BEACH_L / 2 - 1.5), 5, 6))); }
+  if (reg === 'hawaii') { scene2.add(islet(-28, -45, [[-2.2, 0.3, 5.6], [0, -0.7, 6.4], [2.1, 0.6, 5]])); scene2.add(islet(31, -44, [[-1.5, 0, 5.8], [1.6, -0.4, 5.2]])); }
   // creek outlet beyond the end of the walk, when NOAA lists a river or creek for this site
   if (s.river && /creek|river|brook|stream|inlet|run|slough/i.test(s.river)) {
     const pts = []; for (let i = 0; i <= 12; i++) pts.push(new THREE.Vector2(i * 1.3 - 2, Math.sin(i * 0.6) * 1.2));
@@ -2280,6 +2294,9 @@ async function enterBeach(s) {
   ['intro', 'card'].forEach(id => document.getElementById(id).style.display = 'none');
   hud(s, info);
   beachIntro(s);
+  if (Object.keys(ANIMS).length < Object.keys(ANIM_LIST).length) loadAnims().then(() => {   // animals that arrived after the 8 s cut-off join the beach
+    if (beach && beach.site === s) { beach.scene = buildScenery(s); renderHud(); }
+  });
   } catch (err) { logOnce('enterBeach', err); }
   finally {
     entering = false;
@@ -2498,7 +2515,7 @@ function frameBody(now) {
     walkX += (walkTarget - walkX) * 0.06;
     look = 0;
     setBeachCam(); stepMini(); for (const f of [() => stepBounce(now), () => stepHome(now), () => stepMarker(now), () => stepScene(t)]) { try { f(); } catch (err) { logOnce('step', err); } }
-    bSun.target.position.set(walkX, 0, 4); bSun.position.set(walkX - 20, 14, -18);
+    bSun.target.position.set(walkX, 0, 4); bSun.position.set(walkX - 20, sunH, -18);
     if (!reduceMotion) animateWater(t);
     renderer.toneMappingExposure = beachExposure;
     renderer.render(beachScene, beachCam);
@@ -2525,6 +2542,8 @@ window.__itemsAll = () => items.map(i => ({ x: i.home.x, z: i.home.z, c: typeCol
 const m = location.hash.match(/^#beach-(\d+)$/);
 if (m) { const s = sites.find(x => x.id === +m[1]); if (s) enterBeach(s).then(() => { window.__ready = true; }); else window.__ready = true; }
 else window.__ready = true;
+// fetch the animated animals while the visitor is still on the globe
+(window.requestIdleCallback || (f => setTimeout(f, 3000)))(() => loadAnims(), { timeout: 6000 });
 </script>
 </body>
 </html>
