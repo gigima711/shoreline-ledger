@@ -311,7 +311,7 @@ textarea { width: 100%; min-height: 170px; font: inherit; font-size: 0.86rem; pa
     <p class="muted">Ten states charge a refundable deposit (5–15¢) on drink containers. We compared every NOAA beach survey in those states with surveys elsewhere. The share of drink containers among all debris works as a yardstick across beaches of different sizes and survey methods.</p>
     <div class="evgrid">
       <div class="glass evcard"><h3 id="hShare"></h3><div id="cmpShare"></div><p class="muted" style="font-size:.8rem">Plastic bottles, cans and glass bottles, as a share of every item counted. Whiskers: 95% range from re-sampling beaches.</p></div>
-      <div class="glass evcard"><h3 id="hCaps"></h3><div id="cmpCaps"></div><p class="muted" style="font-size:.8rem">Plastic caps per plastic drink bottle. A deposit pays for the bottle, never the cap. If deposits work, bottles vanish from deposit-state beaches while caps stay, so this ratio should be higher there. It is.</p></div>
+      <div class="glass evcard"><h3 id="hCaps"></h3><div id="cmpCaps"></div><p class="muted" style="font-size:.8rem">Plastic caps per plastic drink bottle. A deposit pays for the bottle, not the cap, so where deposits work you would expect more caps per bottle. That is what the data show, but much of this gap comes from Hawaii, where ocean-borne debris washing in from far away is mostly caps and fragments.</p></div>
     </div>
     <div class="glass chartwrap">
       <h3 style="margin-bottom:6px" id="hStates"></h3>
@@ -2210,12 +2210,17 @@ function locatorSVG(s) {
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Location of ${label(s)}">${st.map(f => [f, path(f)]).filter(([, d]) => d).map(([f, d]) => `<path d="${d}" fill="${!f.properties || f.properties.name === s.state || !f.properties.name ? '#3a5466' : '#1d2d39'}" stroke="#0d1a24" stroke-width=".6"/>`).join('')}${p ? `<circle cx="${p[0]}" cy="${p[1]}" r="9" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#fff"/>` : ''}</svg>`;
 }
+function licLink(l) {
+  const m = l.match(/^CC (BY(?:-SA)?) (\d\.\d)$/);
+  const url = m ? `https://creativecommons.org/licenses/${m[1].toLowerCase()}/${m[2]}/` : l === 'CC0' ? 'https://creativecommons.org/publicdomain/zero/1.0/' : null;
+  return url ? `<a href="${url}" target="_blank" rel="noopener">${l}</a>` : l;
+}
 function beachIntro(s) {
   const ph = PHOTOS[s.id];
   intro2.innerHTML = `<button class="x" type="button" aria-label="Close">×</button>
     <div class="kicker">${ph ? 'The real beach · and its 3D rebuild behind' : 'Where this beach is'}</div>
     ${ph ? `<figure><div class="ph"><img src="${ph.src}" alt="Photo of the shore near ${label(s)}"><span class="tag">Real photo</span></div>
-      <figcaption>Taken near this NOAA survey site. Location reference only, not from a survey day; it says nothing about litter. Photo: ${ph.a} · ${ph.l} · <a href="${ph.page}" target="_blank" rel="noopener">${ph.site}</a></figcaption></figure>`
+      <figcaption>Taken near this NOAA survey site. Location reference only, not from a survey day; it says nothing about litter. Photo: ${ph.a} · ${licLink(ph.l)} · <a href="${ph.page}" target="_blank" rel="noopener">${ph.site}</a> · resized</figcaption></figure>`
     : `<div class="loc">${locatorSVG(s)}</div><div class="muted" style="font-size:.74rem">No verified photo of this beach yet, so we show where it is instead.</div>`}
     <div style="font-size:.88rem;line-height:1.45">The beach behind this card is <b>rebuilt from NOAA survey data</b>: the litter on the sand keeps the real mix of the ${fmt(s.items)} items counted here${s.surveys > 1 ? ` across ${s.surveys} surveys` : ''} (${yrs(s)}). Sky, sand and landmarks follow the ${LOOK[regionOf(s)].label}, not this exact spot.</div>
     <div class="row2"><button class="btn" type="button" id="intro2Go">Walk this beach</button></div>`;
@@ -2285,19 +2290,25 @@ function buildEvidence() {
   document.getElementById('evHead').textContent = `Where states have no bottle deposit, drink containers make up ${(+C.ratio).toFixed(1)}× the share of beach litter`;
   document.getElementById('evFact').textContent = `${fmt(sites.length)} beaches · ${fmt(C.deposit.surveys + C.noDeposit.surveys)} NOAA surveys, ${D.meta.years[0]}–${D.meta.years[1]} · ratio ${C.ratio}×, 95% CI ${C.ratioCI[0]}–${C.ratioCI[1]}×`;
   document.getElementById('hShare').textContent = `No-deposit states: ${C.noDeposit.bevShare}% of beach debris is drink containers. Deposit states: ${C.deposit.bevShare}%.`;
-  document.getElementById('hCaps').textContent = `Caps stay, bottles go: ${C.deposit.capRatio} caps per bottle in deposit states, ${C.noDeposit.capRatio} elsewhere`;
+  document.getElementById('hCaps').textContent = `More caps per bottle in deposit states: ${C.deposit.capRatio}, against ${C.noDeposit.capRatio} elsewhere`;
   document.getElementById('hStates').textContent = `State by state: the typical no-deposit state is at ${f1(mNon)}%, the typical deposit state at ${f1(mDep)}%`;
   const odd1 = depS.filter(d => d.bevShare > mNon).sort((a, b) => b.bevShare - a.bevShare), odd2 = nonS.filter(d => d.bevShare < mDep).sort((a, b) => a.bevShare - b.bevShare);
   const nm = l => l.map(d => `${d.state} (${d.bevShare}%)`).join(', ');
+  const poolShare = f => { const r = {}; [true, false].forEach(dp => { const ss = sites.filter(x => !!x.deposit === dp && x.bevShare != null && f(x)); const n = ss.reduce((a, x) => a + x.items, 0); r[dp] = ss.reduce((a, x) => a + x.items * x.bevShare, 0) / n; }); return r; };
+  const exHI = poolShare(x => x.state !== 'Hawaii'), ratioExHI = (exHI[false] / exHI[true]).toFixed(2);
+  const depItems = sites.filter(x => x.deposit).reduce((a, x) => a + x.items, 0), hiShare = Math.round(sites.filter(x => x.state === 'Hawaii').reduce((a, x) => a + x.items, 0) / depItems * 100);
+  const depWithData = Object.keys(D.depositStates).filter(st => sites.some(x => x.state === st)), depNoData = Object.keys(D.depositStates).filter(st => !depWithData.includes(st));
   document.getElementById('limits').innerHTML = `
     <div class="kicker">What this shows, and what it doesn't</div>
     <ul>
-      <li><b>Shows:</b> across ${fmt(C.deposit.surveys + C.noDeposit.surveys)} surveys, drink containers are a much smaller part of the litter on deposit-state beaches, and the cap test points the same way.</li>
+      <li><b>Shows:</b> across ${fmt(C.deposit.surveys + C.noDeposit.surveys)} surveys, drink containers are a much smaller part of the litter on deposit-state beaches. The caps-per-bottle pattern points the same way, though mostly because of Hawaii (see below).</li>
       <li><b>Doesn't show:</b> that the deposit alone causes the gap. States also differ in tourism, coastline, local cleanups and other laws, and NOAA beaches were not picked at random. This is a comparison, not a controlled experiment.</li>
       <li><b>Not every state fits.</b> ${odd1.length ? `${nm(odd1)} ${odd1.length > 1 ? 'have' : 'has'} a deposit but more drink containers than the typical no-deposit state` : ''}${odd1.length && odd2.length ? '; ' : ''}${odd2.length ? `${nm(odd2)} ${odd2.length > 1 ? 'have' : 'has'} no deposit but fewer than the typical deposit state` : ''}. Some states rest on few surveys, so their ranges are wide.</li>
+      <li><b>Hawaii carries much of the result.</b> It holds ${hiShare}% of all items counted in deposit states, much of it ocean-borne debris that drifted in from far away. Leave Hawaii out and the gap shrinks from ${C.ratio}× to ${ratioExHI}×, and the cap pattern nearly disappears.</li>
+      <li><b>Survey effort is uneven.</b> A few heavily surveyed beaches hold a large part of the items, and ${depWithData.length} of the ${Object.keys(D.depositStates).length} deposit states have NOAA beaches${depNoData.length ? ` (none in ${depNoData.join(' or ')})` : ''}.</li>
       <li><b>One beach is not a verdict.</b> A single beach's share swings with weather, season and who surveyed it; the pattern only shows up across many beaches.</li>
     </ul>`;
-  document.getElementById('robust').textContent = `Holds when we change the method: only the current MDMAP 2.0 protocol (since 2021) gives ${C.robust.protocol20.noDeposit}% vs ${C.robust.protocol20.deposit}%; the median beach gives ${C.robust.siteMedian.noDeposit}% vs ${C.robust.siteMedian.deposit}%. Ratio 95% range: ${C.ratioCI[0]}× to ${C.ratioCI[1]}×.`;
+  document.getElementById('robust').textContent = `Holds, though weaker, when we change the method: only the current MDMAP 2.0 protocol (since 2021) gives ${C.robust.protocol20.noDeposit}% vs ${C.robust.protocol20.deposit}%; among beaches surveyed at least twice, the median beach gives ${C.robust.siteMedian.noDeposit}% vs ${C.robust.siteMedian.deposit}%; leaving out Hawaii gives ${ratioExHI}×. Ratio 95% range: ${C.ratioCI[0]}× to ${C.ratioCI[1]}×.`;
   const S = D.states, W = 760, rowH = 22, M = { t: 26, r: 20, b: 30, l: 130 }, H = M.t + M.b + S.length * rowH;
   const sc = d3.select('#stateChart').attr('viewBox', `0 0 ${W} ${H}`);
   const x = d3.scaleLinear().domain([0, Math.ceil(d3.max(S, d => d.bevCI[1]) + 0.5)]).range([M.l, W - M.r]);
@@ -2331,7 +2342,7 @@ function beachEvidence(s) {
   const dep = D.depositStates[s.state], st = D.states.find(d => d.state === s.state);
   const thin = s.surveys < 3 || s.items < 100;
   const rows = [];
-  if (s.bevShare != null && s.items) rows.push({ name: 'This beach', v: s.bevShare, color: 'var(--accent)', here: true });
+  if (s.bevShare != null && s.items) rows.push({ name: 'This beach', v: s.bevShare, color: '#8a96a0', here: true });
   if (st) rows.push({ name: s.state, v: st.bevShare, color: dep ? 'var(--deposit)' : 'var(--nodeposit)' });
   rows.push({ name: 'No-deposit states', v: C.noDeposit.bevShare, color: 'var(--nodeposit)' }, { name: 'Deposit states', v: C.deposit.bevShare, color: 'var(--deposit)' });
   const max = Math.max(6, ...rows.map(r => r.v)) * 1.08;
@@ -2344,7 +2355,7 @@ function beachEvidence(s) {
     <div class="fact">NOAA MDMAP · ${s.surveys} survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)} · ${fmt(s.items)} items counted</div>
     <div>${dep ? `<span class="chip dep">${s.state}: bottle deposit since ${dep}</span>` : `<span class="chip nodep">${s.state}: no bottle deposit</span>`}</div>
     ${s.items ? `<div class="bars">${rows.map(r => `<div class="cmprow"><span class="${r.here ? 'here' : ''}">${r.name}</span><svg viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="5" width="${r.v / max * 100}" height="12" rx="2" fill="${r.color}"></rect></svg><span class="num">${r.v}%</span></div>`).join('')}</div>
-    <p class="muted" style="font-size:.84rem">${s.bevShare == null ? '' : `Drink containers were <b>${s.bevShare}%</b> of what NOAA volunteers counted here, against ${C.noDeposit.bevShare}% across no-deposit states and ${C.deposit.bevShare}% across deposit states.`} ${thin ? `<span class="caveat">Only ${s.surveys} survey${s.surveys > 1 ? 's' : ''} and ${fmt(s.items)} items here, so this beach's share is rough; the state and national figures are steadier.</span>` : ''}</p>`
+    <p class="muted" style="font-size:.84rem">${s.bevShare == null ? '' : `Drink containers were <b>${s.bevShare}%</b> of what NOAA volunteers counted here, against ${C.noDeposit.bevShare}% across no-deposit states and ${C.deposit.bevShare}% across deposit states.${st && s.bevShare < st.bevShare ? ` That is lower than ${s.state}'s ${st.bevShare}%: single beaches vary a lot, which is why the comparison uses thousands of surveys, not one beach.` : ''}`} ${thin ? `<span class="caveat">Only ${s.surveys} survey${s.surveys > 1 ? 's' : ''} and ${fmt(s.items)} items here, so this beach's share is rough; the state and national figures are steadier.</span>` : ''}</p>`
     : `<p class="muted" style="font-size:.84rem">NOAA volunteers found no litter here in ${s.surveys} survey${s.surveys > 1 ? 's' : ''}. A clean result is real data too.</p>`}
     ${nearRows.length ? `<div class="kicker" style="margin-top:4px">Nearby beaches, for comparison</div><div class="near">${nearRows.map(([x, d]) => `<div><span>${label(x)} <span class="muted">· ${x.state}${D.depositStates[x.state] ? ', deposit' : ', no deposit'}</span></span><span class="num">${x.bevShare}%</span><span class="km">${Math.round(d)} km</span></div>`).join('')}</div>` : ''}
     <div class="muted" style="font-size:.74rem">Other beach-litter laws (plastic bags, foam, smoke-free beaches) are being compiled and will be added here.</div>`;
@@ -2371,7 +2382,7 @@ Please support a beverage container deposit law, or protect and modernize the on
 Sincerely,
 [Your name, your town]`; return; }
   const dep = D.depositStates[s.state], st = D.states.find(d => d.state === s.state);
-  const cmpLine = s.items && s.bevShare != null ? ` Drink containers were ${s.bevShare}% of them${st ? `; across ${s.state}'s NOAA beaches the figure is ${st.bevShare}%` : ''}.` : ' They found no litter, which is worth protecting.';
+  const cmpLine = s.items && s.bevShare != null ? (st ? ` Across ${s.state}'s NOAA beaches, drink containers make up ${st.bevShare}% of debris; at this beach they were ${s.bevShare}%.` : ` Drink containers were ${s.bevShare}% of them.`) : ' They found no litter, which is worth protecting.';
   document.getElementById('actHead').textContent = `Write for ${label(s)}`;
   document.getElementById('actSub').textContent = `This letter already carries ${label(s)}'s NOAA numbers and what ${s.state} ${dep ? 'should keep' : 'is missing'}. Edit it, copy it, and send it to your state legislator.`;
   document.getElementById('msg').value =
@@ -2379,7 +2390,7 @@ Sincerely,
 
 I'm writing about ${label(s)} in ${s.state}. NOAA volunteers surveyed it ${s.surveys === 1 ? 'once' : s.surveys + ' times'} (${yrs(s)}) and counted ${fmt(s.items)} pieces of debris.${cmpLine}
 
-Across ${total} NOAA beach surveys, beaches in states without a bottle deposit carry ${C.ratio} times the share of drink containers found in deposit states (${C.noDeposit.bevShare}% vs ${C.deposit.bevShare}% of all debris). Caps, which earn no deposit, stay on deposit-state beaches while bottles disappear, which points to the deposit itself.
+Across ${total} NOAA beach surveys, beaches in states without a bottle deposit carry ${C.ratio} times the share of drink containers found in deposit states (${C.noDeposit.bevShare}% vs ${C.deposit.bevShare}% of all debris). That fits what earlier research found (Schuyler et al., Marine Policy, 2018), though a comparison like this cannot prove the deposit alone is the cause.
 
 ${dep ? `${s.state} has had a bottle deposit since ${dep}. Please protect it and modernize it: raise the deposit to keep pace with inflation and cover more container types.` : `${s.state} has no bottle deposit. ${['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve'][Object.keys(D.depositStates).length] || Object.keys(D.depositStates).length} states do, some since the 1970s. Please support a beverage container deposit law for ${s.state}.`}
 
@@ -2393,7 +2404,7 @@ document.getElementById('navEv').onclick = () => openEvidence(null, false);
 document.getElementById('navAct').onclick = () => openEvidence(null, true);
 document.getElementById('introEv').onclick = () => openEvidence(null, false);
 document.getElementById('introWalk').onclick = async () => {   // walk the beach on the open card, else a well-surveyed beach in a no-deposit state
-  let s = lastSite; if (!s) { const pool = sites.filter(x => !x.deposit && x.items > 300 && x.surveys >= 4); s = pool[Math.floor(Math.random() * pool.length)]; }
+  let s = lastSite; if (!s) { const pool = sites.filter(x => !x.deposit && x.items > 300 && x.surveys >= 4 && x.bevShare >= C.noDeposit.bevShare); s = pool[Math.floor(Math.random() * pool.length)]; }
   await goSite(s); enterBeach(s); };
 document.getElementById('navMap').onclick = () => { closeEvidence(); if (mode === 'beach') exitBeach(); };
 document.getElementById('navHome').onclick = e => { e.preventDefault(); closeEvidence(); if (mode === 'beach') exitBeach(); };
