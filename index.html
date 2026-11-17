@@ -38,7 +38,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; line
 .muted { color: var(--ink-2); }
 .kicker { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
 button, input { font: inherit; }
-button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 body:has(#intro2.on) #beachHud { visibility: hidden; }
 #intro { left: 24px; top: calc(var(--topbar) + 20px); width: min(420px, calc(100% - 48px)); padding: 18px; display: grid; gap: 10px; }
@@ -175,6 +175,8 @@ body.beach #beachHud { top: calc(var(--topbar) + 60px); width: min(300px, calc(1
 #itemCard .casePh img { width: 100%; max-height: 190px; object-fit: cover; border-radius: 6px; display: block; }
 #itemCard .casePh figcaption { font-size: .72rem; line-height: 1.4; color: var(--ink-2); }
 #walk.on { display: block; }
+#fadeCard .building { font-size: .74rem; opacity: .75; margin-top: 6px; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
 .bins { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
 .bins button { border: 1px solid var(--glass-line); background: rgba(255,255,255,0.06); color: var(--ink); border-radius: 10px; padding: 10px 8px; cursor: pointer; display: grid; gap: 2px; text-align: left; }
 .bins button b { font-size: 0.9rem; } .bins button span { font-size: 0.72rem; color: var(--ink-2); }
@@ -211,6 +213,8 @@ body.beach #mapLegend, body.beach #zoom { display: none; }
 .evbeach .near .num, .evbeach .near .km { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-2); }
 .evbeach .caveat { font-size: .78rem; color: var(--ink-2); }
 .limits { background: #fbfaf6 !important; }
+#act .steps { margin: 2px 0 4px; padding-left: 20px; font-size: .88rem; line-height: 1.5; display: grid; gap: 4px; }
+#act a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .limits ul { margin: 4px 0 0; padding-left: 18px; font-size: .86rem; line-height: 1.55; }
 .cmprow .here { font-weight: 700; }
 .evgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
@@ -237,7 +241,17 @@ textarea { width: 100%; min-height: 170px; font: inherit; font-size: 0.86rem; pa
 #topbar nav a.on { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); border-radius: 0; }
 .fact { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 #intro .cta { display: flex; gap: 8px; flex-wrap: wrap; }
-@media (max-width: 760px) { #topbar nav a { padding: 8px 6px; font-size: .8rem; } #topbar { gap: 10px; padding: 0 12px; }  #card { top: auto; bottom: 16px; right: 16px; } #policy { display: none !important; } }
+@media (max-width: 760px) { #topbar nav a { padding: 8px 6px; font-size: .8rem; } #topbar { gap: 10px; padding: 0 12px; }  #card { top: auto; bottom: 16px; right: 16px; }
+  body.beach #policy { top: auto; bottom: 132px; left: 12px; right: 12px; width: auto; padding: 10px 12px; gap: 6px; }
+  body.beach #policy .muted { display: none; } body.beach #policy h3 { font-size: .95rem; }
+  #zoom { display: none; } #mapLegend .row span { font-size: .72rem; }
+  #walk { top: auto; bottom: 210px; max-width: calc(100% - 24px); text-align: center; }
+  #mini { width: calc(100% - 24px); min-width: 0; bottom: 12px; padding: 6px 10px 8px; } #mini .cap > :not(.count) { display: none; } #mini .strip { height: 36px; }
+  #bins { right: auto; left: 50%; transform: translateX(-50%); bottom: 80px; padding: 0; } #bins .bin { width: 64px; } #bins .bin svg { width: 34px; height: 36px; } #bins .bin kbd { display: none; }
+  body.beach #policy { bottom: 170px; }
+  #beachHud { left: 12px; right: 12px; width: auto; top: calc(var(--topbar) + 56px); padding: 10px 12px; gap: 6px; max-height: 32vh; }
+  #beachHud > .muted, #beachHud .src, #beachHud .prog { display: none; } #beachHud .note { font-size: .74rem !important; }
+  #beachBar .barbtn { padding: 4px 8px; font-size: .72rem; white-space: nowrap; } #beachBar .bt b { font-size: .9rem; } }
 @media (prefers-reduced-motion: reduce) { #fade { transition: none; } }
 </style>
 <script type="importmap">
@@ -253,7 +267,7 @@ textarea { width: 100%; min-height: 170px; font: inherit; font-size: 0.86rem; pa
 <header id="topbar" class="ui">
   <a class="brand" href="#" id="navHome"><i aria-hidden="true"></i>Shoreline Ledger</a>
   <nav aria-label="Sections">
-    <a id="navMap" class="on">Map</a><a id="navEv">Evidence</a><a id="navAct">Act</a><a id="navSrc" href="credits.html" target="_blank" rel="noopener">Sources</a>
+    <a id="navMap" class="on" href="#map">Map</a><a id="navEv" href="#evidence">Evidence</a><a id="navAct" href="#act">Act</a><a id="navSrc" href="credits.html" target="_blank" rel="noopener">Sources</a>
   </nav>
 </header>
 <section id="intro" class="ui glass" aria-label="Find a beach">
@@ -303,8 +317,7 @@ textarea { width: 100%; min-height: 170px; font: inherit; font-size: 0.86rem; pa
 </div>
 <section id="evidence" aria-label="The evidence">
   <div class="inner">
-    <button class="btn ghost closeEv" type="button" id="closeEv">Back</button>
-    <div id="evBeach" class="glass evcard evbeach" hidden></div>
+    <button class="btn ghost closeEv" type="button" id="closeEv" hidden>Back</button>
     <div class="kicker">The evidence · bottle deposits</div>
     <h2 id="evHead"></h2>
     <div class="fact" id="evFact"></div>
@@ -326,13 +339,19 @@ textarea { width: 100%; min-height: 170px; font: inherit; font-size: 0.86rem; pa
       <div id="cmpLocal"></div>
       <p class="muted" id="localText"></p>
     </div>
+    <div id="evBeach" class="glass evcard evbeach" hidden></div>
     <div class="glass evcard" id="act">
       <div class="kicker">Act</div>
       <h3 id="actHead">Send the evidence to someone who can act on it</h3>
       <p class="muted" id="actSub">Edit the message, copy it, and send it to your state legislator.</p>
-      <label for="msg" class="muted" style="font-size:.8rem">Message</label>
+      <ol class="steps">
+        <li><b>Find your state legislators.</b> <a id="findRep" href="https://openstates.org/find_your_legislator/" target="_blank" rel="noopener">Look them up by address on Open States &rarr;</a></li>
+        <li><b>Edit the letter.</b> It already carries this beach's NOAA numbers; add your name and why it matters to you.</li>
+        <li><b>Send it.</b> Copy it into their contact form, or open it in your email app.</li>
+      </ol>
+      <label for="msg" class="muted" style="font-size:.8rem">Your letter</label>
       <textarea id="msg"></textarea>
-      <button class="btn" id="copy" type="button" style="justify-self:start">Copy message</button>
+      <div class="row2" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="copy" type="button">Copy letter</button><a class="btn ghost" id="mailto" href="#">Open in email</a></div>
       <span class="muted" id="copied" aria-live="polite" style="font-size:.82rem"></span>
     </div>
     <p class="muted" style="font-size:.78rem">Data: NOAA Marine Debris Monitoring and Assessment Project, exported 14 Nov 2026 (mdmap.orr.noaa.gov), U.S. states only. Prior work found the same pattern with Ocean Conservancy data (Schuyler et al., Marine Policy, 2018).</p>
@@ -1361,8 +1380,15 @@ function hideCard() { itemCard.classList.remove('on'); document.body.classList.r
 const toast = document.getElementById('toast');
 let toastTimer = null;
 function say(html, ms = 5200) { toast.innerHTML = html; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), ms); }
+// the "what would stop this" panel waits until the visitor has done something on the beach
+const stageT = {};
+function revealPolicy() {
+  if (!beach || beach.policyShown) return;
+  beach.policyShown = true; document.getElementById('policy').classList.add('on');
+}
 function collect(it, bin) {
   it.done = true; it.mesh.visible = false; beach.cleaned++;
+  if (beach.cleaned >= 2) revealPolicy();
   beach.byBin[bin] = (beach.byBin[bin] || 0) + 1;
 }
 function judge(it, bin) {
@@ -1417,7 +1443,7 @@ function drawMini() {
     n.style.background = typeColor(it.t); n.title = it.t.name; n.onclick = ev => { ev.stopPropagation(); walkTo(it.home.x); setTimeout(() => showItem(it), 450); }; w.appendChild(n); });
   mini.querySelector('.count').textContent = items.length ? `Cleaned ${beach.cleaned} of ${items.length}` : 'No litter counted here';
 }
-function stepMini() { const v = mini.querySelector('.view'); if (!v) return; v.style.left = ((walkX - 4 + BEACH_L / 2) / BEACH_L * 100) + '%'; v.style.width = (8 / BEACH_L * 100) + '%'; }
+function stepMini() { if (beach && !beach.policyShown && Math.abs(walkX - (beach.startX ?? walkX)) > 14) revealPolicy(); if (beach && beach.startX == null) beach.startX = walkX; const v = mini.querySelector('.view'); if (!v) return; v.style.left = ((walkX - 4 + BEACH_L / 2) / BEACH_L * 100) + '%'; v.style.width = (8 / BEACH_L * 100) + '%'; }
 {
   const strip = mini.querySelector('.strip'); let down = false;
   const go = e => { const r = strip.getBoundingClientRect(); walkTo((e.clientX - r.left) / r.width * BEACH_L - BEACH_L / 2); };
@@ -1480,14 +1506,14 @@ function hud(s, info) {
   enterBeachState(s, info);
   const dep = beach.dep, p = document.getElementById('policy');
   p.innerHTML = `
-    <div class="kicker">What would help here</div>
+    <div class="kicker">What would stop this litter</div>
     <h3>${dep ? `${s.state} has had a bottle deposit since ${dep}` : `${s.state} has no bottle deposit`}</h3>
     <div class="muted" style="font-size:.84rem">Across ${fmt(C.deposit.surveys + C.noDeposit.surveys)} NOAA surveys, beaches in states without a deposit carry <b>${C.ratio}×</b> the share of drink containers (${C.noDeposit.bevShare}% vs ${C.deposit.bevShare}%). Here: <b>${s.bevShare == null ? 'none found' : s.bevShare + '%'}</b>.</div>
     <button class="btn" type="button" id="openEv">See the evidence and act</button>`;
-  p.classList.add('on');
+  beach.policyShown = false; clearTimeout(stageT.policy); clearTimeout(stageT.walk);
   document.getElementById('openEv').onclick = () => openEvidence(s);
   document.getElementById('walk').textContent = items.length ? 'Click an item to learn about it · drag it into a bin to clean it up' : 'NOAA surveyors found no litter here · scroll or drag to walk the shore';
-  ['walk', 'mini', 'bins'].forEach(id => document.getElementById(id).classList.add('on')); drawMini();
+  ['mini', 'bins'].forEach(id => document.getElementById(id).classList.add('on')); drawMini();
 }
 const report = document.getElementById('report');
 function showReport() {
@@ -2226,7 +2252,12 @@ function beachIntro(s) {
     <div class="row2"><button class="btn" type="button" id="intro2Go">Walk this beach</button></div>`;
   const img = intro2.querySelector('img'); if (img) img.onerror = () => { const f = img.closest('figure'); f.outerHTML = `<div class="loc">${locatorSVG(s)}</div><div class="muted" style="font-size:.74rem">The photo could not load here.</div>`; };
   intro2.classList.add('on');
-  const close = () => intro2.classList.remove('on');
+  const close = () => {
+    intro2.classList.remove('on');
+    if (!beach) return;
+    const w = document.getElementById('walk'); w.classList.add('on'); clearTimeout(stageT.walk); stageT.walk = setTimeout(() => w.classList.remove('on'), 7000);
+    if (!items.length) revealPolicy(); else { clearTimeout(stageT.policy); stageT.policy = setTimeout(revealPolicy, 25000); }
+  };
   intro2.querySelector('.x').onclick = close; document.getElementById('intro2Go').onclick = close;
 }
 // globe -> beach in about 2 s: dive at the coast, pass through the region's own haze (place card shows), beach comes out of the same haze
@@ -2236,7 +2267,7 @@ async function enterBeach(s) {
   document.getElementById('evidence').classList.remove('on'); setNav('navMap');
   try {
   const L = LOOK[regionOf(s)], fogCol = L.fog;
-  fadeCard.innerHTML = `<div class="kicker">${L.label} · ${s.state}</div><b>${label(s)}</b><span>${fmt(s.items)} items · ${s.surveys} NOAA survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)}</span>`;
+  fadeCard.innerHTML = `<div class="kicker">${L.label} · ${s.state}</div><b>${label(s)}</b><span>${fmt(s.items)} items · ${s.surveys} NOAA survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)}</span><span class="building">Building this beach from its NOAA surveys…</span>`;
   fade.style.background = fogCol; fade.classList.add('dive');
   const dist = globeCam.position.length(), far = dist > 7.5;
   if (far) await flyTo(s.lat, s.lon, 6.4, 900);                    // from far out, get over the coast first
@@ -2258,6 +2289,7 @@ async function enterBeach(s) {
 async function exitBeach() {
   fade.style.opacity = 1; await wait(650); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   mode = 'globe'; controls.enabled = true; document.body.classList.remove('beach'); document.getElementById('evidence').classList.remove('on');
+  if (beach) { clearTimeout(stageT.policy); clearTimeout(stageT.walk); }
   ['beachHud', 'policy', 'walk', 'mini', 'bins', 'itemCard', 'report', 'toast', 'intro2'].forEach(id => document.getElementById(id).classList.remove('on')); beach = null; stopAudio();
   document.getElementById('intro').style.display = ''; card.style.display = '';
   fade.style.opacity = 0;
@@ -2328,6 +2360,10 @@ function buildEvidence() {
     { name: 'Ohio', color: 'var(--nodeposit)', v: L.ohio.bevShare, ci: L.ohio.bevCI, n: L.ohio.surveys, sites: L.ohio.sites },
     { name: 'Michigan', color: 'var(--deposit)', v: L.michigan.bevShare, ci: L.michigan.bevCI, n: L.michigan.surveys, sites: L.michigan.sites }], 5.5, '%');
   document.getElementById('localText').textContent = `Not enough evidence yet on the lakes: the 95% ranges overlap heavily (ratio ${L.ratioCI[0]}× to ${L.ratioCI[1]}×). Great Lakes beaches hold few drink containers, NOAA has run only ${L.ohio.surveys + L.michigan.surveys} surveys across the two states, and Lake Michigan's Illinois, Indiana and Wisconsin shores have almost no NOAA data. Adding Alliance for the Great Lakes cleanup records is our next step.`;
+  document.getElementById('mailto').addEventListener('click', e => {
+    const body = document.getElementById('msg').value, subj = document.getElementById('actHead').textContent.replace(/^Write for /, 'Beach litter at ');
+    e.currentTarget.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+  });
   document.getElementById('copy').addEventListener('click', async () => {
     const out = document.getElementById('copied');
     try { await navigator.clipboard.writeText(document.getElementById('msg').value); out.textContent = 'Copied. Paste it into an email or your legislator\'s contact form.'; }
@@ -2400,13 +2436,13 @@ Sincerely,
 let lastSite = null;
 function setNav(id) { document.querySelectorAll('#topbar nav a').forEach(a => a.classList.toggle('on', a.id === id)); }
 function closeEvidence() { document.getElementById('evidence').classList.remove('on'); setNav('navMap'); }
-document.getElementById('navEv').onclick = () => openEvidence(null, false);
-document.getElementById('navAct').onclick = () => openEvidence(null, true);
+document.getElementById('navEv').onclick = e => { e.preventDefault(); openEvidence(null, false); };
+document.getElementById('navAct').onclick = e => { e.preventDefault(); openEvidence(null, true); };
 document.getElementById('introEv').onclick = () => openEvidence(null, false);
 document.getElementById('introWalk').onclick = async () => {   // walk the beach on the open card, else a well-surveyed beach in a no-deposit state
   let s = lastSite; if (!s) { const pool = sites.filter(x => !x.deposit && x.items > 300 && x.surveys >= 4 && x.bevShare >= C.noDeposit.bevShare); s = pool[Math.floor(Math.random() * pool.length)]; }
   await goSite(s); enterBeach(s); };
-document.getElementById('navMap').onclick = () => { closeEvidence(); if (mode === 'beach') exitBeach(); };
+document.getElementById('navMap').onclick = e => { e.preventDefault(); closeEvidence(); if (mode === 'beach') exitBeach(); };
 document.getElementById('navHome').onclick = e => { e.preventDefault(); closeEvidence(); if (mode === 'beach') exitBeach(); };
 document.getElementById('introRatio').textContent = (+C.ratio).toFixed(1) + '×';
 document.getElementById('introFact').textContent = `${fmt(sites.length)} beaches · ${fmt(C.deposit.surveys + C.noDeposit.surveys)} surveys · 95% CI ${C.ratioCI[0]}–${C.ratioCI[1]}×`;
