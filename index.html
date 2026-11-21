@@ -398,11 +398,11 @@ body.beach #clock { display: none; }
 /* the photo is 800 px wide, so it is shown framed at about its own size, with the card under it, over a blurred, darkened copy (designer review) */
 #fade.photo #fadePh { filter: blur(40px) brightness(.42) saturate(.8); transform: scale(1.25); }
 #fade.photo #fadeShade { background: radial-gradient(120% 90% at 50% 45%, rgba(8,16,26,.2) 40%, rgba(4,8,14,.7) 100%), rgba(8,16,26,.35); }
-#fadeCol { position: absolute; left: 50%; top: 50%; width: min(600px, 46vw); transform: translate(-50%, calc(-50% - 4vh)); pointer-events: none; }
+#fadeCol { position: absolute; left: 50%; top: 50%; width: min(820px, 62vw); transform: translate(-50%, calc(-50% - 3vh)); pointer-events: none; }
 #fadeCol a, #fadeCol button { pointer-events: auto; }
 @media (max-width: 760px) { #fadeCol { width: calc(100vw - 32px); transform: translate(-50%, calc(-50% + 4vh)); } }
 #fadeFrame { opacity: 0; }
-#fadeFrame img { display: block; width: 100%; height: auto; max-height: 52vh; object-fit: cover; border-radius: 8px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08); }
+#fadeFrame img { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: cover; border-radius: 8px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08); }
 #fade.photo #fadeFrame { animation: frameIn 3.7s both; }
 @keyframes frameIn { 0% { opacity: 0; transform: scale(.96); animation-timing-function: cubic-bezier(.2,.8,.2,1); } 19% { opacity: 1; transform: scale(1); animation-timing-function: linear; } 100% { opacity: 1; transform: scale(1.02); } }
 #fade.out #fadeFrame { animation: frameOut .6s ease-in both; }
