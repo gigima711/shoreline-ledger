@@ -1080,9 +1080,10 @@ const discSprite = (() => { const c = document.createElement('canvas'); c.width 
 tdots.material.opacity = 0.95; tdots.material.map = discSprite;
 const tRim = new THREE.Points(rimGeo(tdots.geometry, [0.07, 0.09, 0.11]), dotMat({ map: discSprite, opacity: 0.85 }));
 const dRim = new THREE.Points(rimGeo(dots.geometry, [1, 1, 1]), dotMat({ map: discSprite, opacity: 0.95 }));
-dots.material.map = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');   // one style: a solid dot in the policy colour with a thin dark edge, no glow
-  x.fillStyle = 'rgba(3,6,10,0.75)'; x.beginPath(); x.arc(32, 32, 22, 0, 7); x.fill();
-  x.fillStyle = '#fff'; x.beginPath(); x.arc(32, 32, 19, 0, 7); x.fill(); return new THREE.CanvasTexture(c); })();
+dots.material.map = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');   // a soft glowing beacon: bright core, colour halo
+  const g = x.createRadialGradient(32, 32, 0, 32, 32, 31); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.3, 'rgba(255,255,255,1)'); g.addColorStop(0.4, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = 'rgba(0,0,0,0.55)'; x.beginPath(); x.arc(32, 32, 18, 0, 7); x.fill();   // a dark collar so beacons stand out on bright daytime land and sea
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
 // grouped beaches: a bigger dot, by area (3 + 1.6·√n px radius, capped); the count sits inside once the dot is large enough
 const cluSize = n => 1;   // every dot the same size (no size-by-count), so no counts are drawn either
 [dots, cleanDots].forEach(o => { o.geometry.setAttribute('aSz', new THREE.BufferAttribute(new Float32Array(sites.length).fill(1), 1));
@@ -1346,7 +1347,7 @@ function fill(geo, list, P, colorOf) {
 const majority = (m, isOn) => m.filter(isOn).length * 2 >= m.length ? ON : OFF;
 function recluster() {
   const zz = zoom01(), big = 7.5 + 8 * zz * zz, small = 4.5 + 4.5 * zz * zz;
-  nClu = clusterize(sites.length, dpos, i => (sites[i].clean ? 0 : 1e6) + sites[i].surveys, big * 1.8);   // centres at least ~1.75 dot-widths apart, so dots never touch
+  nClu = clusterize(sites.length, dpos, i => (sites[i].clean ? 0 : 1e6) + sites[i].surveys, big * 1.4);   // a clear gap between dots, so they never touch
   nClu.forEach(c => c.clean = c.m.every(i => sites[i].clean));
   const filled = nClu.filter(c => !c.clean), rings = nClu.filter(c => c.clean);
   const depSite = i => !!D.depositStates[sites[i].state];
@@ -1371,7 +1372,7 @@ function stepMarks(now) {
   const selP = selMark && card.classList.contains('on') ? scr(ll2v(selMark.lat, selMark.lon, R * 1.006)) : null;
   // 1. counts on grouped dots (3 or more), once zoomed in a bit
   let n = 0; const dist0 = globeCam.position.length();
-  const dotR = dots.material.size * 19 / 64;   // drawn radius of a single dot, px
+  const dotR = dots.material.size * 10 / 64;   // drawn radius of a single dot, px
   for (const c of nClu) { if (c.m.length < 3 || n >= 60 || dotR * cluSize(c.m.length) < 10 || c.clean) continue;
     const p = scr(_v.fromArray(dpos, c.lead * 3).clone()); if (p.front < 0.2 || underUI(p.x, p.y, 10) || (selP && Math.hypot(p.x - selP.x, p.y - selP.y) < 30)) continue;
     const el = cntPool[n] || (cntPool[n] = marksEl.appendChild(Object.assign(document.createElement('span'), { className: 'cnt' })));
