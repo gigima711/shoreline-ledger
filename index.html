@@ -1084,7 +1084,7 @@ dots.material.map = (() => { const c = document.createElement('canvas'); c.width
   x.fillStyle = 'rgba(3,6,10,0.75)'; x.beginPath(); x.arc(32, 32, 22, 0, 7); x.fill();
   x.fillStyle = '#fff'; x.beginPath(); x.arc(32, 32, 19, 0, 7); x.fill(); return new THREE.CanvasTexture(c); })();
 // grouped beaches: a bigger dot, by area (3 + 1.6·√n px radius, capped); the count sits inside once the dot is large enough
-const cluSize = n => Math.min(1.7, (3 + 1.6 * Math.sqrt(n)) / 4.6);
+const cluSize = n => 1;   // every dot the same size (no size-by-count), so no counts are drawn either
 [dots, cleanDots].forEach(o => { o.geometry.setAttribute('aSz', new THREE.BufferAttribute(new Float32Array(sites.length).fill(1), 1));
   o.material.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aSz;').replace('gl_PointSize = size;', 'gl_PointSize = size * aSz;'); };
   o.material.customProgramCacheKey = () => 'ptsz'; });
