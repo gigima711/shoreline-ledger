@@ -481,6 +481,7 @@ body.beach #replayIntro, body.introRun #replayIntro, body.booting #replayIntro {
 #introChips button { font: 500 12px/1 var(--font-body); color: #dfe7ec; background: rgba(8,13,20,.55); border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 8px 13px; cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 #introChips button:hover, #introChips button:focus-visible { border-color: rgba(76,201,240,.7); color: #fff; }
 #introChips button[aria-pressed=true] { color: #4cc9f0; }
+@media (pointer: coarse), (max-width: 760px) { #introGrid .g, #introChips button, #mapLegend, #zoom { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; } #introGrid .g { background: rgba(4,8,14,.82); } }
 /* while the opening runs: the panel, marks and controls wait */
 body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun #mapLegend, body.introRun #zoom, body.introRun #clock { opacity: 0 !important; pointer-events: none; transition: opacity .4s; }
 #intro { transition: opacity .6s cubic-bezier(.2,.7,.2,1); }
@@ -1122,10 +1123,11 @@ const sweep = (() => {
   const grid100 = (lit, cls) => `<div class="sq ${cls}">${Array.from({ length: 100 }, (_, i) => `<i${lit.includes(i) ? ' class="on"' : ''}></i>`).join('')}</div>`;
   gridEl.innerHTML = `<div class="g"><b class="dep">${C.deposit.bevShare.toFixed(1)}</b> of every 100 items${grid100([34, 77], 'dep')}<small>States with a bottle deposit</small></div>`
     + `<div class="g"><b class="no">${C.noDeposit.bevShare.toFixed(1)}</b> of every 100 items${grid100([12, 45, 63, 88], 'no')}<small>States without one</small></div>`;
-  let raf = 0, t0 = 0, running = false, built = null, P = null;
+  let raf = 0, t0 = 0, running = false, built = null, P = null, prPrev = 1, slow = 0, nF = 0, lastNow = 0;
+  const setPR = r => { renderer.setPixelRatio(r); renderer.setSize(innerWidth, innerHeight, false); };
   // built once per run: the state overlay (one ID texture, colours driven by uniforms), the beach points, the sun
   function build() {
-    const W = 2048, H = 1024, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+    const W = COARSE ? 1024 : 2048, H = W / 2, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d', { willReadFrequently: true });   // phones: a quarter of the pixels
     const path = d3.geoPath(d3.geoEquirectangular().scale(W / (2 * Math.PI)).translate([W / 2, H / 2]), x);
     for (const f of topojson.feature(US, US.objects.states).features) { const k = depIdx[f.properties.name]; x.fillStyle = `rgb(${k == null ? 60 : 120 + k * 13},255,0)`; x.beginPath(); path(f); x.fill(); }
     const im = x.getImageData(0, 0, W, H), a = im.data;   // snap blended edge pixels to a valid code; drop coast edges
@@ -1157,7 +1159,7 @@ const sweep = (() => {
         void main() { float d = uT - aT; vA = smoothstep(0.0, 0.015, d); float pop = exp(-max(d, 0.0) * 30.0); vC = aCol; vP = pop * vA;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_PointSize = (11.0 + 10.0 * pop * vA) * uPx; }`,
       fragmentShader: `uniform sampler2D uMap; varying float vA; varying vec3 vC; varying float vP; void main() { vec4 t = texture2D(uMap, gl_PointCoord); float a = t.a * vA; if (a < 0.01) discard; gl_FragColor = vec4(min(vC * t.rgb + vP * 0.25, vec3(1.0)), a); }` }));
-    pts.renderOrder = 9; pts.frustumCulled = false; pts.visible = false; globeScene.add(pts);
+    pts.renderOrder = 9; pts.frustumCulled = false; globeScene.add(pts);   // visible from the start (nothing drawn yet), so its shader compiles up front
     // the sun: a hot core (hidden by the Earth until it clears the limb), a wide glow and a streak along the horizon
     const radial = (stops) => { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const cx = cv.getContext('2d'), gr = cx.createRadialGradient(64, 64, 0, 64, 64, 64); stops.forEach(([o, c2]) => gr.addColorStop(o, c2)); cx.fillStyle = gr; cx.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t; };
     const spr = (map, depthTest) => { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map, transparent: true, depthWrite: false, depthTest, blending: THREE.AdditiveBlending, toneMapped: false, opacity: 0 })); m.renderOrder = 12; m.frustumCulled = false; globeScene.add(m); return m; };
@@ -1196,6 +1198,8 @@ const sweep = (() => {
   let lastBeat = -1;
   function tick(now) {
     const t = FREEZE ?? (now - t0); if (DEBUG) window.__introT = t; const b = built, SU = skyStars.userData.SU;
+    if (nF++ > 3 && nF < 40) { slow += (now - lastNow > 26) ? 1 : 0; if (slow === 12 && renderer.getPixelRatio() > 0.75) setPR(0.75); }   // still slow: drop resolution once
+    lastNow = now;
     camAt(t);
     // stars, sun and the forward-scattering glow of the atmosphere
     const eye = globeCam.position, sb = eye.dot(P.s), cl = sb > 0 ? 1 : (Math.sqrt(Math.max(0, eye.lengthSq() - sb * sb)) - R) / eye.length(), vis = sm(seg(cl, -0.004, 0.012));
@@ -1205,8 +1209,8 @@ const sweep = (() => {
     const sp = P.s.clone().multiplyScalar(400); [b.core, b.glow, b.streak].forEach(o => o.position.copy(sp));
     const flash = 4 * vis * (1 - vis);
     b.core.scale.setScalar(9 + 6 * flash); b.core.material.opacity = sunK;
-    b.glow.scale.setScalar(150 + 60 * flash); b.glow.material.opacity = 0.7 * sunK;
-    b.streak.scale.set(260 + 120 * flash, 5 + 3 * flash, 1); b.streak.material.opacity = 0.8 * sunK;
+    b.glow.scale.setScalar((COARSE ? 90 : 150) + 60 * flash); b.glow.material.opacity = 0.7 * sunK;
+    b.streak.scale.set(260 + 120 * flash, 5 + 3 * flash, 1); b.streak.material.opacity = COARSE ? 0 : 0.8 * sunK; b.streak.visible = !COARSE;
     // the deposit states, one beat per year a law passed
     const SU2 = b.SU2;
     SU2.uGrey.value = sm(seg(t, TL.pullA + 800, TL.depA));
@@ -1218,7 +1222,7 @@ const sweep = (() => {
     else if (t >= othersA && t < TL.dotsA) say('Ten states have a bottle deposit law', 'Amber: every other state, with none');
     else if (t < TL.depA) { if (t > TL.pullA + 600) say('Shoreline Ledger', 'Beach litter counted by NOAA volunteers, and the law in each state'); }
     // the beaches
-    if (t >= TL.dotsA) { const k = seg(t, TL.dotsA, TL.dotsB); b.pts.visible = t < TL.end; b.U.uT.value = -0.02 + k * 1.04;
+    if (t >= TL.dotsA) { const k = seg(t, TL.dotsA, TL.dotsB); b.U.uT.value = -0.02 + k * 1.04;
       const yNow = b.Y0 + b.U.uT.value * (b.Y1 - b.Y0); let n = 0; while (n < b.order.length && b.order[n][0] < yNow) n++;
       if (t < TL.gridA) say(`<b>${Math.min(b.Y1 - 1, Math.floor(yNow))}</b> · ${fmt(n)} beach${n === 1 ? '' : 'es'} surveyed by NOAA volunteers`, `${fmt(n ? b.cum[n - 1] : 0)} litter items counted at them, one by one`); }
     // per 100 items
@@ -1230,7 +1234,7 @@ const sweep = (() => {
   const onKey = e => { if (e.key === 'Tab') return; finish(); };
   const onStage = e => { if (e.target.closest && e.target.closest('#introChips')) return; finish(); };   // any tap or drag outside the two chips ends it
   function finish() {
-    if (!running) return; running = false; cancelAnimationFrame(raf); camLock = false; dispose();
+    if (!running) return; running = false; cancelAnimationFrame(raf); camLock = false; dispose(); if (renderer.getPixelRatio() !== prPrev) setPR(prPrev);
     const SU = skyStars.userData.SU; SU.uK.value = 1; AU.uKm.value = 0.09;
     globeCam.position.copy(ll2v(30, -97, 19)); globeCam.up.set(0, 1, 0); controls.target.set(0, 0, 0); frameGlobe(); controls.enabled = true; controls.update();
     dots.visible = cleanDots.visible = true; needCluster = true; cap.classList.remove('on'); capKey = '';
@@ -1246,7 +1250,10 @@ const sweep = (() => {
     built = build(); P = solve(); camLock = true; controls.enabled = false; controls.autoRotate = false;
     dots.visible = cleanDots.visible = false; card.classList.remove('on');
     document.body.classList.add('introRun'); chips.classList.add('on'); showSound(); ratioEl.classList.remove('lit');
-    t0 = performance.now(); raf = requestAnimationFrame(tick);
+    prPrev = renderer.getPixelRatio(); if (COARSE) setPR(1);   // phones: the opening is all motion, so render it at 1x
+    camAt(0); slow = 0; nF = 0;
+    const go = () => { if (!running) return; t0 = performance.now(); lastNow = t0; raf = requestAnimationFrame(tick); };
+    (renderer.compileAsync ? renderer.compileAsync(globeScene, globeCam).catch(() => {}) : Promise.resolve()).then(go);   // compile every shader before the clock starts
     addEventListener('keydown', onKey, true); addEventListener('pointerdown', onStage, true); canvas.addEventListener('wheel', onStage, { capture: true, passive: true });
   }
   document.getElementById('replayIntro').addEventListener('click', () => run());   // a tap, so sound can play if it is turned on
