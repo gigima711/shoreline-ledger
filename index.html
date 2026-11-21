@@ -1165,8 +1165,8 @@ const sweep = (() => {
   const grid100 = (v, cls) => { const full = Math.floor(v), part = +(v - full).toFixed(2); let h = '';
     for (let i = 0; i < 100; i++) h += i < full ? `<i class="on" style="--d:${i}"></i>` : i === full && part > 0 ? `<i class="on part" style="--d:${i};--p:${part}"></i>` : '<i></i>';
     return `<div class="sq ${cls}">${h}</div>`; };
-  // two compact styles: 1 = numbers only, 2 = numbers with a thin bar each (bars share one scale, 0–5 per 100); the bars exist only during the opening
-  const CMPV = DEBUG && /[?&]cmpv=1/.test(location.search) ? 1 : 2, SCALE = 5;
+  // compact: the two numbers only (a thin-bar variant stays behind ?debug&cmpv=2)
+  const CMPV = DEBUG && /[?&]cmpv=2/.test(location.search) ? 2 : 1, SCALE = 5;   // numbers only by default
   const bar = (v, cls) => CMPV === 2 ? `<div class="bar ${cls}"><i style="--w:${(v / SCALE).toFixed(3)}"></i></div>` : '';
   cmpEl.classList.add('v' + CMPV);
   cmpEl.innerHTML = `<div class="col"><b class="num dep">0.0</b><span class="per">per 100 items</span>${bar(DEP, 'dep')}<span class="lab">Deposit states</span></div>`
