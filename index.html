@@ -398,7 +398,7 @@ body.beach #clock { display: none; }
 /* the photo is 800 px wide, so it is shown framed at about its own size, with the card under it, over a blurred, darkened copy (designer review) */
 #fade.photo #fadePh { filter: blur(40px) brightness(.42) saturate(.8); transform: scale(1.25); }
 #fade.photo #fadeShade { background: radial-gradient(120% 90% at 50% 45%, rgba(8,16,26,.2) 40%, rgba(4,8,14,.7) 100%), rgba(8,16,26,.35); }
-#fadeCol { position: absolute; left: 50%; top: 50%; width: min(820px, 62vw); transform: translate(-50%, calc(-50% - 3vh)); pointer-events: none; }
+#fadeCol { position: absolute; left: 50%; top: calc(50% + var(--topbar) / 2); width: min(820px, 62vw); transform: translate(-50%, -50%); pointer-events: none; }   /* centred in the space under the top bar */
 #fadeCol a, #fadeCol button { pointer-events: auto; }
 @media (max-width: 760px) { #fadeCol { width: calc(100vw - 32px); transform: translate(-50%, calc(-50% + 4vh)); } }
 #fadeFrame { opacity: 0; }
