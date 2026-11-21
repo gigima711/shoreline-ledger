@@ -1346,7 +1346,7 @@ function fill(geo, list, P, colorOf) {
 const majority = (m, isOn) => m.filter(isOn).length * 2 >= m.length ? ON : OFF;
 function recluster() {
   const zz = zoom01(), big = 7.5 + 8 * zz * zz, small = 4.5 + 4.5 * zz * zz;
-  nClu = clusterize(sites.length, dpos, i => (sites[i].clean ? 0 : 1e6) + sites[i].surveys, big * 1.15);
+  nClu = clusterize(sites.length, dpos, i => (sites[i].clean ? 0 : 1e6) + sites[i].surveys, big * 1.8);   // centres at least ~1.75 dot-widths apart, so dots never touch
   nClu.forEach(c => c.clean = c.m.every(i => sites[i].clean));
   const filled = nClu.filter(c => !c.clean), rings = nClu.filter(c => c.clean);
   const depSite = i => !!D.depositStates[sites[i].state];
