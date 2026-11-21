@@ -325,6 +325,9 @@ body:not(.paper) .glass.ui { backdrop-filter: blur(18px) saturate(1.35); -webkit
 #intro h1 #introRatio { color: #fff; font-style: italic; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: rgba(255,255,255,0.45); }
 #introCaveat { font-size: .78rem; color: var(--ink-2); margin: 4px 0 10px; line-height: 1.45; }
 #intro .fact { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-2); letter-spacing: .04em; }
+#intro .factRow { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+#intro .replay { font: .7rem var(--font-mono); letter-spacing: .04em; color: var(--ink-2); background: none; border: 0; border-bottom: 1px dotted currentColor; padding: 0; cursor: pointer; opacity: .8; }
+#intro .replay:hover, #intro .replay:focus-visible { color: #4cc9f0; opacity: 1; }
 #intro .sub { color: #c5cfd8 !important; max-width: 34ch; }
 #intro input[type=search] { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 10px 16px; color: var(--ink); transition: border-color .2s, background .2s; }
 #intro input[type=search]:focus { outline: none; border-color: rgba(125,211,252,0.6); background: rgba(255,255,255,0.08); }
@@ -434,7 +437,7 @@ body:not(.booting) #skipIntro { opacity: 0; pointer-events: none; }
 <section id="intro" class="ui glass" aria-label="Find a beach">
   <div class="kicker">NOAA beach-litter surveys · 2009–2026</div>
   <h1>Where states have no bottle deposit, drink containers make up <span id="introRatio">2.5×</span> the share of beach litter.</h1>
-  <div class="fact" id="introFact">847 beaches · 8,119 surveys</div>
+  <div class="factRow"><div class="fact" id="introFact">847 beaches · 8,119 surveys</div><button type="button" id="replayIntro" class="replay" title="Play the opening animation again">↻ Replay intro</button></div>
   <p id="introCaveat"></p>
   <p class="sub">Walk a real beach, item by item, with the litter NOAA counted laid out at its real count.</p>
   <div class="search">
@@ -1015,8 +1018,9 @@ dRim.visible = cRim.visible = false;   // no white rims: beacons glow instead
 // 1) real NOAA drifter-buoy tracks, retimed to a common start, curl into the ocean gyres (the currents that gather floating litter);
 // 2) the 847 NOAA beaches light up in the order they were first surveyed, 2009 → 2026; 3) the headline finding.
 const sweep = (() => {
-  let seen = false; try { seen = localStorage.getItem('ledgerSeenIntro') === '1'; } catch (e) {}
-  if (seen || reduceMotion || /^#beach-/.test(location.hash) || /[?&](nointro|demo)/.test(location.search)) return null;
+  let seen = false, replay = false; try { seen = localStorage.getItem('ledgerSeenIntro') === '1'; replay = sessionStorage.getItem('ledgerReplay') === '1'; sessionStorage.removeItem('ledgerReplay'); } catch (e) {}
+  document.getElementById('replayIntro').addEventListener('click', () => { try { localStorage.removeItem('ledgerSeenIntro'); sessionStorage.setItem('ledgerReplay', '1'); } catch (e) {} location.replace(location.pathname); });   // asked for, so it plays even with reduced motion
+  if (!replay && (seen || reduceMotion) || /^#beach-/.test(location.hash) || /[?&](nointro|demo)/.test(location.search)) return null;
   const Y0 = 2009, Y1 = 2027, yr = s => { const f = s.first || '2026-06'; return +f.slice(0, 4) + (+f.slice(5, 7) - 1) / 12; };
   const order = sites.map((s, i) => [yr(s), i]).sort((a, b) => a[0] - b[0]);
   const aT = new Float32Array(sites.length), aC = new Float32Array(sites.length * 3);
