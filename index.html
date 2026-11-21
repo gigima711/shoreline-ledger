@@ -496,6 +496,13 @@ body.beach #replayIntro, body.introRun #replayIntro, body.booting #replayIntro {
 @keyframes sqOn { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
 @keyframes sqPart { from { opacity: 1; transform: scaleX(0); } to { opacity: 1; transform: scaleX(var(--p)); } }
 @media (min-width: 761px) and (pointer: fine) { #cmp .sq.dep i.on { box-shadow: 0 0 8px rgba(76,201,240,.35); } #cmp .sq.no i.on { box-shadow: 0 0 8px rgba(255,169,77,.35); } }
+
+#cmp .bar { position: relative; width: 168px; height: 6px; border-radius: 3px; overflow: hidden; margin: 4px 0 2px; }   /* no track: only the two lengths are compared */
+@media (max-width: 760px) { #cmp .bar { width: 140px; } }
+#cmp .bar i { position: absolute; inset: 0; border-radius: 3px; transform-origin: left center; transform: scaleX(0); }
+#cmp .bar.dep i { background: #4cc9f0; } #cmp .bar.no i { background: #ffa94d; }
+#introCap.fill #cmp .bar i { transition: transform calc(var(--w) * 5 / 4.3 * 700ms) linear; transform: scaleX(var(--w)); }
+#cmp.v1 .per { margin-bottom: 0; }
 #cmpRatio { margin-top: 18px; font: 500 20px/1.3 var(--font-display); color: #f3efe6; opacity: 0; transform: translateY(6px); transition: opacity .32s ease, transform .32s ease; }
 #cmpRatio em, .flyRatio { font-family: var(--font-display); font-style: italic; font-weight: 500; color: #ffa94d; }
 #cmpNote { margin: 8px 0 0; font: 11px/1.45 var(--font-mono); color: var(--ink-2); max-width: 40ch; opacity: 0; transition: opacity .32s ease .1s; }
@@ -1137,7 +1144,7 @@ const sweep = (() => {
   const autoOK = !seen && !reduceMotion && !/^#beach-/.test(location.hash) && !/[?&](nointro|demo)/.test(location.search);
   const FREEZE = DEBUG ? (m => m ? +m[1] : null)(location.search.match(/[?&]introT=([\d.]+)/)) : null;   // screenshot hook: hold the opening at t ms
   // 12 s: the comparison is held still for 2.1 s so it can be read twice, then its 2.5× flies into the headline
-  const TL = { stars: 600, dolly: 1300, pullA: 1100, pullB: 3000, capA: 1700, depA: 3000, beat: 340, othersB: 6100, dotsA: 6100, dotsB: 7500, gridA: 7500, cmpA: 7700, fillA: 8200, step: 140, ratioA: 9300, handA: 11000, revealA: 11400, end: 11750 };
+  const TL = { stars: 600, dolly: 1300, pullA: 1100, pullB: 3000, capA: 1700, depA: 3000, beat: 340, othersB: 6100, dotsA: 6100, dotsB: 7500, gridA: 7500, cmpA: 7700, fillA: 8100, step: 140, ratioA: 8800, handA: 10300, revealA: 10700, end: 11050 };   // the comparison is held still ~1.5 s
   const beats = []; Object.entries(D.depositStates).sort((a, b) => a[1] - b[1]).forEach(([n, y]) => { const b = beats.find(x => x.y === y); b ? b.names.push(n) : beats.push({ y, names: [n] }); });
   const depIdx = Object.fromEntries(Object.keys(D.depositStates).sort((a, b) => D.depositStates[a] - D.depositStates[b]).map((n, k) => [n, k]));
   const othersA = TL.depA + beats.length * TL.beat;
@@ -1158,11 +1165,15 @@ const sweep = (() => {
   const grid100 = (v, cls) => { const full = Math.floor(v), part = +(v - full).toFixed(2); let h = '';
     for (let i = 0; i < 100; i++) h += i < full ? `<i class="on" style="--d:${i}"></i>` : i === full && part > 0 ? `<i class="on part" style="--d:${i};--p:${part}"></i>` : '<i></i>';
     return `<div class="sq ${cls}">${h}</div>`; };
-  cmpEl.innerHTML = `<div class="col"><b class="num dep">0.0</b><span class="per">per 100 items</span>${grid100(DEP, 'dep')}<span class="lab">Deposit states</span></div>`
-    + `<div class="col"><b class="num no">0.0</b><span class="per">per 100 items</span>${grid100(NODEP, 'no')}<span class="lab">No deposit</span></div>`;
+  // two compact styles: 1 = numbers only, 2 = numbers with a thin bar each (bars share one scale, 0–5 per 100); the bars exist only during the opening
+  const CMPV = DEBUG && /[?&]cmpv=1/.test(location.search) ? 1 : 2, SCALE = 5;
+  const bar = (v, cls) => CMPV === 2 ? `<div class="bar ${cls}"><i style="--w:${(v / SCALE).toFixed(3)}"></i></div>` : '';
+  cmpEl.classList.add('v' + CMPV);
+  cmpEl.innerHTML = `<div class="col"><b class="num dep">0.0</b><span class="per">per 100 items</span>${bar(DEP, 'dep')}<span class="lab">Deposit states</span></div>`
+    + `<div class="col"><b class="num no">0.0</b><span class="per">per 100 items</span>${bar(NODEP, 'no')}<span class="lab">No deposit</span></div>`;
   ratioLine.innerHTML = `${NODEP} ÷ ${DEP} ≈ <em>${RATIO}×</em> the share`;
   noteEl.textContent = `A pattern across ${fmt(C.deposit.surveys + C.noDeposit.surveys)} surveys, not proof the law alone causes it.`;
-  const nums = cmpEl.querySelectorAll('.num'), fillDur = v => (Math.ceil(v)) * TL.step;
+  const nums = cmpEl.querySelectorAll('.num'), fillDur = v => v / NODEP * 700;   // same speed for both: the blue stops first
   // captions: one slot (where the headline ends up); kicker ticks in place, the line and sub cross-fade
   let kTxt = '', lTxt = '', sKey = '';
   const setK = x => { if (x !== kTxt) { kTxt = x; capK.textContent = x; } };
