@@ -394,6 +394,24 @@ body.beach #clock { display: none; }
 #fade.photo #fadeSkip, #fade.map #fadeSkip { opacity: 1; }
 #fade.out #fadePh { filter: blur(7px) brightness(1.35) saturate(.9); transform: scale(1.22); } #fade.out #fadeCard, #fade.out #fadeSkip { opacity: 0; }
 #fade.out { transition: opacity .75s ease; pointer-events: none; }
+
+/* the photo is 800 px wide, so it is shown framed at about its own size, with the card under it, over a blurred, darkened copy (designer review) */
+#fade.photo #fadePh { filter: blur(40px) brightness(.42) saturate(.8); transform: scale(1.25); }
+#fade.photo #fadeShade { background: radial-gradient(120% 90% at 50% 45%, rgba(8,16,26,.2) 40%, rgba(4,8,14,.7) 100%), rgba(8,16,26,.35); }
+#fadeCol { position: absolute; left: 50%; top: 50%; width: min(600px, 46vw); transform: translate(-50%, calc(-50% - 4vh)); pointer-events: none; }
+#fadeCol a, #fadeCol button { pointer-events: auto; }
+@media (max-width: 760px) { #fadeCol { width: calc(100vw - 32px); transform: translate(-50%, calc(-50% + 4vh)); } }
+#fadeFrame { opacity: 0; }
+#fadeFrame img { display: block; width: 100%; height: auto; max-height: 52vh; object-fit: cover; border-radius: 8px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08); }
+#fade.photo #fadeFrame { animation: frameIn 3.7s both; }
+@keyframes frameIn { 0% { opacity: 0; transform: scale(.96); animation-timing-function: cubic-bezier(.2,.8,.2,1); } 19% { opacity: 1; transform: scale(1); animation-timing-function: linear; } 100% { opacity: 1; transform: scale(1.02); } }
+#fade.out #fadeFrame { animation: frameOut .6s ease-in both; }
+@keyframes frameOut { from { opacity: 1; transform: scale(1.02); } to { opacity: 0; transform: scale(1.05); } }
+#fade.dive #fadeCol #fadeCard { position: static; margin-top: 20px; max-width: none; right: auto; left: auto; bottom: auto; }
+@media (max-width: 760px) { #fade.dive #fadeCol #fadeCard { margin-top: 16px; } #fade.dive #fadeCard .kicker .lab { display: none; } #fade.dive #fadeCard b { font-size: 1.6rem; } }
+#fade .nw { white-space: nowrap; font: inherit !important; } #fade.dive #fadeCard .kicker span { font: inherit !important; color: inherit; }
+#fade.dive #fadeCol .fadeCred { font-size: .68rem !important; opacity: .7; }
+@media (prefers-reduced-motion: reduce) { #fade.photo #fadeFrame, #fade.out #fadeFrame { animation: none; opacity: 1; } #fade.out #fadeFrame { opacity: 0; transition: opacity .3s; } }
 .linkBtn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { #fadePh, #fadeMap, #fadeCard, #fadeShade { transition: opacity .3s ease !important; transform: none !important; clip-path: none !important; } #fade.loading::after { animation: none; } }
 @media (max-width: 760px) { #fadeSkip { bottom: auto; top: calc(var(--topbar) + 12px); } #fade.dive #fadeCard b { font-size: 1.5rem; } #fadeMap svg { width: 86vw; } }
@@ -3388,10 +3406,13 @@ document.addEventListener('click', e => { if (e.target && e.target.id === 'seePh
 function fadeStage(s, L, ph) {
   const sky = SKYCOL[regionOf(s)] || { hor: L.fog, top: L.sky[0] };
   fade.style.background = `linear-gradient(180deg, ${sky.top} 0%, ${sky.hor} 52%, ${L.sand} 100%)`;
-  fade.innerHTML = `<div id="fadePh"${ph ? ` style="background-image:url('${ph.src}')"` : ''}></div><div id="fadeMap">${ph ? '' : locatorSVG(s)}</div><div id="fadeShade"></div>
-    <div id="fadeCard"><div class="kicker">${L.label} · ${s.county ? s.county + ', ' : ''}${s.state}</div><b>${label(s)}</b><span>${fmt(s.items)} items counted · ${s.surveys} NOAA survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)}</span>
-      <span class="fadeCred">${ph ? `Real photo of this shore, not from a survey day · ${ph.a} · ${licLink(ph.l)} · <a href="${ph.page}" target="_blank" rel="noopener">${ph.site}</a> · resized, cropped` : 'No verified photo of this beach yet: here is where it is.'}</span>
-      <span class="building">Building this beach from its NOAA surveys…</span></div>
+  const card = `<div id="fadeCard"><div class="kicker"><span class="lab">${L.label} · </span>${s.county ? s.county + ', ' : ''}${s.state}</div><b>${label(s)}</b><span>${fmt(s.items)} items counted · ${s.surveys} NOAA survey${s.surveys > 1 ? 's' : ''}, <span class="nw">${yrs(s)}</span></span>
+      <span class="fadeCred">${ph ? `Real photo of this shore, not from a survey day · ${ph.a} · ${licLink(ph.l)} · <a href="${ph.page}" target="_blank" rel="noopener">${ph.site}</a> · resized` : 'No verified photo of this beach yet: here is where it is.'}</span>
+      <span class="building">Building this beach from its NOAA surveys…</span></div>`;
+  // with a photo: one centred column, the photo framed at about its own size with the card right under it, over a blurred copy
+  fade.innerHTML = `<div id="fadePh"${ph ? ` style="background-image:url('${ph.src}')"` : ''}></div><div id="fadeShade"></div>`
+    + (ph ? `<div id="fadeCol"><div id="fadeFrame"><img src="${ph.src}" alt=""></div>${card}</div>` : `<div id="fadeMap">${locatorSVG(s)}</div>${card}`)
+    + `
     <button type="button" id="fadeSkip">Skip ›</button>`;
   fade.querySelector('#fadeSkip').onclick = e => { e.stopPropagation(); skipDive && skipDive(); };
 }
