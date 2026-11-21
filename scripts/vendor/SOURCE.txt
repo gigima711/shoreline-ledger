@@ -1,0 +1,1 @@
+openstates/openstates-geo eef2da0 (2026-10-23) configs/jurisdictions, BSD-3
