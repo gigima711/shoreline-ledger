@@ -598,6 +598,38 @@ body.beach #replayIntro, body.introRun #replayIntro, body.booting #replayIntro {
 /* while the opening runs: the panel, marks and controls wait */
 body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun #mapLegend, body.introRun #zoom, body.introRun #clock { opacity: 0 !important; pointer-events: none; transition: opacity .4s; }
 #intro { transition: opacity .6s cubic-bezier(.2,.7,.2,1); }
+/* ---- cleanup report: three layouts (?repv=a|b|c) ---- */
+#report .receipt .ttl { text-align: center; font: 600 1.1rem var(--font-display); color: #23272b; margin-bottom: 2px; }
+#report .receipt .sub { text-align: center; color: #6b6f72; font-size: .66rem; }
+#report .receipt .ln { grid-template-columns: 1fr auto 4.2em; font-size: .74rem; line-height: 1.5; }
+#report .receipt .tot { align-items: baseline; font-size: .9rem; } #report .receipt .tot b { font-size: 1.05rem; }
+#report .receipt .you { margin-top: 4px; color: #8a5a12; font-weight: 600; font-size: .74rem; }
+#report .receipt .cav { margin-top: 6px; font-size: .64rem; color: #6b6f72; } #report .receipt .cav summary { cursor: pointer; list-style: none; color: #6b6f72 !important; text-decoration: underline dotted; text-underline-offset: 2px; } #report .receipt .cav p { margin: 4px 0 0; line-height: 1.45; }
+#report .rx { width: 40px; height: 40px; border: 0; background: none; color: #9aa4ad; font-size: 18px; cursor: pointer; border-radius: 50%; flex: 0 0 auto; } #report .rx:hover { color: #fff; background: rgba(255,255,255,.06); }
+#report .lnk { background: none; border: 0; color: #4cc9f0; font: 600 .92rem var(--font-body); cursor: pointer; padding: 0 8px; white-space: nowrap; }
+#report.v-a, #report.v-c.expanded { background: rgba(3,6,10,.35); }
+#report.v-a.on, #report.v-c.expanded.on { place-items: end center; padding: 0; overflow: hidden; }
+#report .inner.sheet { width: min(460px, 100%); max-height: 64vh; overflow-y: auto; margin: 0; border-radius: 18px 18px 0 0; border: 0; border-top: 1px solid rgba(255,255,255,.08); background: #0a1016; padding: 4px 16px 18px; gap: 10px; animation: sheetUp .28s ease-out both; }
+@keyframes sheetUp { from { transform: translateY(100%); } }
+#report .sheet .grab { width: 36px; height: 4px; border-radius: 2px; background: #ffffff33; margin: 8px auto 0; }
+#report .sheet .hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; } #report .sheet .hd h2 { font: 600 1.15rem var(--font-display); margin: 0; }
+#report .sheet .receipt { padding: 12px 14px; }
+#report .sheet .acts { display: flex; gap: 10px; align-items: center; } #report .sheet .acts .btn { flex: 1; height: 44px; font-size: .95rem; }
+@media (min-width: 761px) { #report .inner.sheet { border-radius: 18px; margin-bottom: 24px; } }
+#report.v-b.on { place-items: center; }
+#report.v-b .inner { width: min(380px, calc(100% - 40px)); background: none; border: 0; padding: 0; gap: 18px; }
+#report.v-b .receipt { padding: 18px 16px 16px; box-shadow: 0 20px 50px -20px rgba(0,0,0,.7); -webkit-mask: radial-gradient(circle 5px at 50% 0, transparent 98%, #000) 0 0 / 14px 51% repeat-x, radial-gradient(circle 5px at 50% 100%, transparent 98%, #000) 0 100% / 14px 51% repeat-x; mask: radial-gradient(circle 5px at 50% 0, transparent 98%, #000) 0 0 / 14px 51% repeat-x, radial-gradient(circle 5px at 50% 100%, transparent 98%, #000) 0 100% / 14px 51% repeat-x; }
+#report.v-b .receipt .tot b { font-size: 1.6rem; color: #b06a00; }
+#report.v-b .ico { display: flex; justify-content: center; gap: 22px; }
+#report.v-b .ico button { background: none; border: 0; color: #dfe7ec; display: grid; justify-items: center; gap: 5px; cursor: pointer; font: 500 .66rem var(--font-body); }
+#report.v-b .ico i { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 20px; background: #ffffff14; border: 1px solid #ffffff1f; }
+#report.v-b .ico .pri i { background: linear-gradient(135deg, #4cc9f0, #9be3ff); color: #06121a; border: 0; }
+#report.v-c:not(.expanded) { background: none; pointer-events: none; }
+#report.v-c:not(.expanded).on { place-items: end center; padding: 0 0 168px; }
+#report .chipBar { pointer-events: auto; width: min(440px, calc(100% - 24px)); height: 72px; border-radius: 14px; background: #0a1016ee; border: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 6px; padding: 0 6px 0 16px; box-shadow: 0 12px 30px -12px rgba(0,0,0,.7); animation: sheetUp .28s ease-out both; }
+#report .chipBar > div { flex: 1; display: grid; min-width: 0; } #report .chipBar b { font: 600 1.5rem var(--font-mono); color: #ffcf7a; line-height: 1.1; } #report .chipBar span { font-size: .74rem; color: #b9c6ce; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#report .chipBar .pc { width: 36px; height: 36px; border-radius: 50%; border: 0; background: linear-gradient(135deg, #4cc9f0, #9be3ff); color: #06121a; font-size: 16px; cursor: pointer; flex: 0 0 auto; }
+@media (min-width: 761px) { #report.v-c:not(.expanded).on { padding-bottom: 120px; } }
 </style>
 <script type="importmap">
 { "imports": {
@@ -2581,37 +2613,38 @@ function hud(s, info) {
   ['mini', 'bins'].forEach(id => document.getElementById(id).classList.add('on')); drawMini();
 }
 const report = document.getElementById('report');
-function showReport() {
-  const s = beach.site, info = beach.info, top = info.types[0], te = top && info.byType.get(top);
-  const share = te ? Math.round(te.n / info.total * 100) : 0, rate = depRate(s.state), bc = bevCounts(s), nBev = bc.reduce((a, [, v]) => a + v, 0);
-  const st = D.states.find(d => d.state === s.state), stShare = st ? st.bevShare : null;
-  const head = beach.dep ? `UNCLAIMED DEPOSITS` : `IF ${s.state.toUpperCase()} PAID 10¢`;
-  report.innerHTML = `<div class="inner">
-    <div class="kicker">Cleanup report</div><h2>${label(s)}</h2>
-    <div class="receipt" role="table" aria-label="Deposit receipt">
-      <div class="hd">SHORELINE LEDGER</div>
-      <div class="sub">${s.state} · ${beach.dep ? `deposit since ${beach.dep} (${rate}¢ today)` : 'no bottle deposit'}<br>NOAA counted here: ${s.surveys} survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)} · ${fmt(s.items)} items</div>
-      <hr>${bc.map(([n, v]) => `<div class="ln"><span>${n}</span><span>${fmt(v)} × ${rate}¢</span><span>${money(v * rate)}</span></div>`).join('')}<hr>
-      <div class="tot"><span>${head}</span><span>${money(nBev * rate)}</span></div>${nBev ? '' : '<div class="ft">No drink containers in NOAA\'s count here.</div>'}
-      ${beach.coinN ? `<div class="ln you"><span>Your walk: ${beach.coinN} container${beach.coinN > 1 ? 's' : ''} sorted</span><span></span><span>${money(beach.coins)}</span></div>` : ''}
-      <div class="ft">Drink containers were ${s.bevShare == null ? 'not found' : s.bevShare + '%'} of the litter here${stShare != null ? ` (${s.state}: ${stShare}%)` : ''}. Overall: ${C.noDeposit.bevShare}% in no-deposit states, ${C.deposit.bevShare}% in deposit states.<br>Estimate at ${beach.dep ? "today's rate" : 'a 10¢ deposit, as in Oregon and Michigan'}: count × deposit, on NOAA's survey stretch only. An upper bound: not every container was redeemable (wine and liquor bottles, bottles that drifted in from far away).</div>
-    </div>
-    <div class="row2"><button class="btn" type="button" id="repCard">Save postcard</button><button class="btn ghost" type="button" id="repEv">See the evidence and act</button><button class="btn ghost" type="button" id="repClose">Keep walking</button></div>
-    ${beach.cleaned ? `<div class="facts">
-      <div><b>${beach.cleaned} / ${items.length}</b><span>items you cleaned on this stretch</span></div>
-      <div><b>${Math.round(beach.firstTypes.size / Math.max(1, new Set([...beach.sorted, ...beach.missed]).size) * 100)}%</b><span>types sorted right the first time</span></div>
-      <div><b>${beach.sorted.size} / ${info.types.length}</b><span>types of litter you sorted</span></div>
-    </div>` : `<div class="muted" style="font-size:.86rem">Walk the strip first: drag a few items into the bins, and your own tally shows up here.</div>`}
-    ${top && top.policy && top.policy !== 'deposit' ? `<div class="muted" style="font-size:.8rem">Also here: the biggest share was ${top.name.toLowerCase()} (${share}%). ${POLICY[top.policy] ? `The policy aimed at that, ${POLICY[top.policy].charAt(0).toLowerCase() + POLICY[top.policy].slice(1)}, is next on our list.` : ''}</div>` : ''}
-    <div class="muted" style="font-size:.72rem">Your cleanup here is a learning walk; it is not added to any dataset.</div></div>`;
-  report.classList.add('on');
-  document.getElementById('repClose').onclick = () => report.classList.remove('on');
-  document.getElementById('repEv').onclick = () => { report.classList.remove('on'); openEvidence(s); };
+const REPV = (/[?&]repv=([abc])/.exec(location.search) || [, 'a'])[1];   // three report layouts to compare; 'a' is the default
+function showReport(expand) {
+  const s = beach.site, rate = depRate(s.state), bc = bevCounts(s), nBev = bc.reduce((a, [, v]) => a + v, 0), total = money(nBev * rate), dep = beach.dep;
+  const SHORT = ['Plastic bottles', 'Cans', 'Glass bottles'];
+  const head = dep ? 'UNCLAIMED DEPOSITS' : `IF ${s.state.toUpperCase()} PAID 10¢`;
+  const sub = `${s.state} · ${dep ? `${rate}¢ today, deposit since ${dep}` : 'no deposit · priced at 10¢'} · NOAA ${s.surveys} survey${s.surveys > 1 ? 's' : ''}`;
+  const lines = bc.map(([, v], i) => `<div class="ln"><span>${SHORT[i]}</span><span>${fmt(v)} × ${rate}¢</span><span>${money(v * rate)}</span></div>`).join('');
+  const you = beach.coinN ? `<div class="you">Your walk · ${beach.coinN} container${beach.coinN > 1 ? 's' : ''} → ${money(beach.coins)}</div>` : '';
+  const note = `<details class="cav"><summary>Estimate, upper bound <span aria-hidden="true">ⓘ</span></summary><p>Count × ${dep ? "today's deposit" : 'a 10¢ deposit, as in Oregon and Michigan'}, on NOAA's survey stretch only (${fmt(s.items)} items, ${yrs(s)}). Not every container was redeemable: wine and liquor bottles, bottles that drifted in from far away. Drink containers were ${s.bevShare == null ? 'not found' : s.bevShare + '%'} of the litter here; overall ${C.noDeposit.bevShare}% in no-deposit states, ${C.deposit.bevShare}% in deposit states. Your cleanup here is a learning walk; it is not added to any dataset.</p></details>`;
+  const paper = title => `<div class="receipt">${title || ''}<div class="sub">${sub}</div><hr>${lines}<hr><div class="tot"><span>${head}</span><b>${total}</b></div>${nBev ? '' : '<div class="you" style="color:#6b6f72">No drink containers in NOAA\'s count here.</div>'}${you}${note}</div>`;
+  const X = '<button type="button" class="rx" id="repClose" aria-label="Close">✕</button>';
+  let html;
+  if (REPV === 'b') {
+    html = `<div class="inner">${paper(`<div class="ttl">${label(s)}</div>`)}
+      <div class="ico"><button type="button" id="repCard" class="pri"><i>⤓</i><span>Postcard</span></button><button type="button" id="repEv"><i>→</i><span>Evidence</span></button><button type="button" id="repClose"><i>✕</i><span>Close</span></button></div></div>`;
+  } else if (REPV === 'c' && !expand) {
+    html = `<div class="chipBar"><div><b>${total}</b><span>${dep ? 'left on' : 'at 10¢ on'} ${label(s)}</span></div><button type="button" class="lnk" id="repOpen">Receipt ↑</button><button type="button" class="pc" id="repCard" aria-label="Save postcard">⤓</button>${X}</div>`;
+  } else {
+    html = `<div class="inner sheet"><div class="grab" aria-hidden="true"></div><div class="hd"><h2>${label(s)}</h2>${X}</div>${paper()}
+      <div class="acts"><button type="button" class="btn" id="repCard">Save postcard</button><button type="button" class="lnk" id="repEv">Evidence →</button></div></div>`;
+  }
+  report.className = `v-${REPV}${REPV === 'c' && expand ? ' expanded' : ''}`;
+  report.innerHTML = html; report.classList.add('on');
+  report.onclick = e => { if (e.target === report) report.classList.remove('on'); };
+  report.querySelectorAll('#repClose').forEach(b => b.onclick = () => report.classList.remove('on'));
+  document.getElementById('repEv')?.addEventListener('click', () => { report.classList.remove('on'); openEvidence(s); });
+  document.getElementById('repOpen')?.addEventListener('click', () => showReport(true));
   document.getElementById('repCard').onclick = e => savePostcard(s, e.currentTarget);
 }
 // a shareable 1200×1600 postcard of this beach's receipt, drawn in the browser (nothing is uploaded)
 async function savePostcard(s, btn) {
-  const old = btn.textContent; btn.textContent = 'Drawing…'; btn.disabled = true;
+  const lab = btn.querySelector('span') || (btn.classList.contains('pc') ? { textContent: '' } : btn), old = lab.textContent; lab.textContent = 'Drawing…'; btn.disabled = true;
   try {
     await Promise.all(['600 64px "Source Serif 4"', '500 24px "IBM Plex Mono"', '400 24px "IBM Plex Sans"', '600 24px "IBM Plex Sans"'].map(f => document.fonts.load(f).catch(() => {})));
     const W = 1200, H = 1600, PH = 900, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -2649,10 +2682,10 @@ async function savePostcard(s, btn) {
     if (ph) { const cr = `Photo: ${ph.a} · ${ph.l} · ${ph.site}`; x.font = `400 17px ${SANS}`; const cw = x.measureText(cr).width; x.fillStyle = 'rgba(3,8,14,.6)'; x.fillRect(W - cw - 40, 20, cw + 24, 30); x.fillStyle = '#e8eef1'; x.fillText(cr, W - cw - 28, 41); }
     const url = URL.createObjectURL(await new Promise(r => cv.toBlob(r, 'image/png')));
     const a = document.createElement('a'); a.href = url; a.download = `shoreline-ledger-${label(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.png`; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000); btn.textContent = 'Saved ✓';
+    setTimeout(() => URL.revokeObjectURL(url), 4000); lab.textContent = 'Saved ✓';
     if (DEBUG) window.__postcard = cv.toDataURL('image/png');
-  } catch (e) { logOnce('postcard', e); btn.textContent = 'Could not draw it'; }
-  setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2500);
+  } catch (e) { logOnce('postcard', e); lab.textContent = 'Could not draw it'; }
+  setTimeout(() => { lab.textContent = old; btn.disabled = false; }, 2500);
 }
 
 // How each report describes the animal, read case by case (2026-11-20): [gear, where on the body, outcome a=freed/released d=died u=not stated, report mentions a wound, optional wording].
