@@ -179,6 +179,7 @@ body.beach.cardOn #policy { display: none !important; }
 #bins .bin { position: relative; width: 78px; padding: 4px 2px 4px; border: 1px solid transparent; border-radius: 9px; background: none; color: var(--ink); display: grid; justify-items: center; gap: 1px; cursor: pointer; transition: transform .15s, width .15s, border-color .15s; }
 #bins .bin svg { width: 48px; height: 52px; transition: transform .15s; transform-origin: 50% 100%; } #bins .bin span { font-size: .72rem; line-height: 1.15; color: var(--ink-2); text-align: center; }
 #bins .bin kbd { position: absolute; top: 2px; right: 6px; font: 500 .62rem var(--font-mono); color: #f4efe6; background: rgba(11,20,28,.75); border-radius: 4px; padding: 0 4px; }
+#bins .bin.noDep { cursor: default; color: rgba(220,230,238,.55); } #bins .bin.noDep i { width: 34px; height: 40px; display: grid; place-items: center; border: 1.5px dashed rgba(220,230,238,.4); border-radius: 6px; font: 600 .78rem var(--font-mono); font-style: normal; margin: 2px 0 1px; } #bins .bin.noDep span { font-size: .66rem; text-align: center; line-height: 1.15; }
 #bins .bin.bin-recycle { color: #8cc0f0; } #bins .bin.bin-special { color: var(--bin-special); } #bins .bin.bin-deposit { color: #7fd39a; } #bins .bin.bin-trash { color: #c9d1d6; }
 body.dragging #bins { box-shadow: 0 0 0 2px rgba(127,211,234,.5); } body.dragging #bins .bin svg { transform: scale(1.15); }
 #bins .bin.over { border-color: var(--accent); background: rgba(127,211,234,.12); } #bins .bin.over svg { transform: scale(1.3) rotate(-4deg); }
@@ -201,6 +202,7 @@ body.dragging #bins { box-shadow: 0 0 0 2px rgba(127,211,234,.5); } body.draggin
 #beachHud .row2, #report .row2 { display: flex; gap: 8px; flex-wrap: wrap; }
 #report { position: fixed; inset: 0; z-index: 30; display: none; place-items: center; background: rgba(3,6,10,.55); }
 #report.on { display: grid; }
+#clock { display: none !important; }
 #beachHud .hudLine { font-size: .86rem; color: var(--ink-2); } #beachHud .hudLine b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; }
 #beachHud details.about summary { cursor: pointer; font-size: .78rem; color: var(--accent); list-style: none; } #beachHud details.about summary::after { content: ' ▾'; } #beachHud details.about[open] summary::after { content: ' ▴'; }
 #beachHud details.about[open] { display: grid; gap: 8px; } #beachHud details.about > summary { margin-bottom: 2px; }
@@ -275,6 +277,8 @@ body.beach #mapLegend, body.beach #zoom { display: none; }
 #evidence .inner { margin-top: 56px; }
 #evidence a:not(.btn) { color: var(--accent); text-underline-offset: 2px; } #evidence a:not(.btn):visited { color: var(--accent); }
 #evidence .lnk { font-size: .88rem; font-weight: 600; }
+#evidence .actGrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 28px; align-items: start; } #evidence .actGrid .letterCol { display: grid; gap: 8px; } #evidence .actGrid .steps { margin: 0; padding-left: 20px; display: grid; gap: 14px; font-size: .88rem; line-height: 1.5; }
+@media (max-width: 860px) { #evidence .actGrid { grid-template-columns: 1fr; } #evidence .actGrid .steps { order: -1; } }
 #evidence #msg { font: 1rem/1.65 var(--font-display, Georgia, serif); color: #23272b; background: #fffdf7; border: 1px solid #e4dccb; border-left: 4px solid #e4dccb; border-radius: 4px; padding: 22px 24px; min-height: 300px; box-shadow: 0 10px 24px -18px rgba(40,30,10,.35); }
 #evBeach[hidden] { display: none !important; }
 #evidence .evTake { display: grid; gap: 8px; padding: 16px 18px; border-radius: 10px; background: #fff; border: 1px solid #e4e0d8; border-left: 4px solid #1b2a35; }
@@ -336,7 +340,8 @@ textarea { width: 100%; min-height: 170px; font: inherit; font-size: 0.86rem; pa
   #walk { top: auto; bottom: 210px; max-width: calc(100% - 24px); text-align: center; }
   #mini { width: calc(100% - 24px); min-width: 0; bottom: 12px; padding: 6px 10px 8px; } #mini .cap > :not(.count):not(#miniCoins) { display: none; } #mini .cap { justify-content: flex-start; } #mini .strip { height: 36px; }
   #bins { right: auto; left: 50%; transform: translateX(-50%); bottom: 80px; padding: 0; } #bins .bin { width: 64px; } #bins .bin svg { width: 34px; height: 36px; } #bins .bin kbd { display: none; }
-  body.beach #policy { bottom: 170px; }
+  body.beach #policy { display: none !important; }   /* phones: the bar's 'Evidence & act' already does this; the sand stays clear */
+  #toast { bottom: 168px; width: calc(100% - 24px); }
   #beachHud { left: 12px; right: 12px; width: auto; top: calc(var(--topbar) + 56px); padding: 10px 12px; gap: 6px; max-height: 32vh; }
   #beachHud > .muted, #beachHud .src, #beachHud .prog { display: none; } #beachHud .note { font-size: .74rem !important; }
   #beachBar .barbtn { padding: 4px 8px; font-size: .72rem; white-space: nowrap; } #beachBar .bt b { font-size: .9rem; } }
@@ -499,8 +504,8 @@ body:not(.booting) #skipIntro { opacity: 0; pointer-events: none; }
 #intro input[type=search]::placeholder { color: rgba(223,231,236,.62); }
 /* the finding's number: amber (it is the no-deposit share), underline drawn on */
 #intro h1 #introRatio { color: #ffa94d; text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 100% 2px no-repeat; padding-bottom: 3px; }
-#intro h1 #introRatio { display: block; width: max-content; font: 600 clamp(3.2rem, 6.5vw, 4.8rem)/1 var(--font-mono); font-style: normal; letter-spacing: -.02em; margin: 10px 0 8px; background: none; padding: 0; text-shadow: 0 0 40px rgba(255,169,77,.25); }
-@media (max-height: 800px) and (min-width: 761px) { #intro h1 #introRatio { font-size: 2.7rem; margin: 4px 0 2px; } }
+#intro h1 #introRatio { display: block; width: max-content; font: 600 clamp(3.6rem, 7vw, 5.2rem)/.95 var(--font-display); font-style: normal; letter-spacing: -.01em; margin: 8px 0 6px; background: none; padding: 0; text-shadow: 0 0 40px rgba(255,169,77,.12); }
+@media (max-height: 800px) and (min-width: 761px) { #intro h1 #introRatio { font-size: 3rem; margin: 2px 0 0; } }
 #intro h1 #introRatio.lit { animation: ratioLit 1.2s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes ratioLit { 0% { color: #fff; background-size: 0 2px; text-shadow: 0 0 0 rgba(255,169,77,0); } 35% { color: #ffa94d; background-size: 100% 2px; text-shadow: 0 0 18px rgba(255,169,77,.45); } 100% { color: #ffa94d; background-size: 100% 2px; text-shadow: 0 0 0 rgba(255,169,77,0); } }
 /* replay: a ghost link in the bottom-left corner */
@@ -686,6 +691,13 @@ body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun 
       <div class="kicker">Act</div>
       <h3 id="actHead">Send the evidence to someone who can act on it</h3>
       <p class="muted" id="actSub">Edit the message, copy it, and send it to your state legislator.</p>
+      <div class="actGrid">
+        <div class="letterCol">
+      <label for="msg" class="muted" style="font-size:.8rem">Your letter</label>
+      <textarea id="msg"></textarea>
+      <div class="row2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="copy" type="button">Copy letter</button><span class="muted" style="font-size:.84rem">or open it in</span><a class="lnk" id="gmail" href="https://mail.google.com/mail/?view=cm&amp;fs=1" target="_blank" rel="noopener">Gmail</a><a class="lnk" id="outlook" href="https://outlook.live.com/mail/0/deeplink/compose" target="_blank" rel="noopener">Outlook</a><a id="mailto" href="#" class="lnk">your email app</a></div>
+      <span class="muted" id="copied" aria-live="polite" style="font-size:.82rem"></span>
+        </div>
       <ol class="steps">
         <li><b>Find your own state legislators.</b> Lawmakers listen most to the people who live in their district, so start with yours.
           <form id="repForm" style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 2px"><input id="repAddr" type="text" autocomplete="street-address" placeholder="Your street address, or town and state" style="flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:6px;border:1px solid #c9cfd4;font:inherit"><button class="btn" type="submit">Find mine &rarr;</button></form>
@@ -694,10 +706,7 @@ body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun 
         <li><b>Edit the letter.</b> <span id="editHint">Pick a beach on the map to add its NOAA numbers.</span> Add your name and why it matters to you.</li>
         <li><b>Send it.</b> Most legislators list an email address or a contact form on their page: copy the letter and paste it there, or open it straight in Gmail or Outlook.</li>
       </ol>
-      <label for="msg" class="muted" style="font-size:.8rem">Your letter</label>
-      <textarea id="msg"></textarea>
-      <div class="row2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="copy" type="button">Copy letter</button><span class="muted" style="font-size:.84rem">or open it in</span><a class="lnk" id="gmail" href="https://mail.google.com/mail/?view=cm&amp;fs=1" target="_blank" rel="noopener">Gmail</a><a class="lnk" id="outlook" href="https://outlook.live.com/mail/0/deeplink/compose" target="_blank" rel="noopener">Outlook</a><a id="mailto" href="#" class="lnk">your email app</a></div>
-      <span class="muted" id="copied" aria-live="polite" style="font-size:.82rem"></span>
+      </div>
     </div>
     <p class="muted" style="font-size:.78rem">Data: NOAA Marine Debris Monitoring and Assessment Project, exported 14 Nov 2026 (mdmap.orr.noaa.gov), U.S. states only. Other studies with other data point the same way: Schuyler et al. (Marine Policy, 2018) and Clean Virginia Waterways (2020), both with Ocean Conservancy cleanup data, found fewer drink containers on deposit-state shores, and Reloop's 2025 review <a href="https://www.reloopplatform.org/the-evidence-is-in-what-the-data-says-about-bottle-bills-litter-and-the-economy/" target="_blank" rel="noopener">Littered with evidence</a> found drink items made up 54% less of litter by count where deposit systems run.</p>
   </div>
@@ -2523,7 +2532,8 @@ function enterBeachState(s, info) {
   setBeachPR(); qT0 = 0; try { renderer.compile(beachScene, beachCam); } catch (e) {}   // compile every shader now, not when an animal first surfaces
   beach = { scene: sc, site: s, info, dep: D.depositStates[s.state], cleaned: 0, coins: 0, coinN: 0, tries: 0, firstTypes: new Set(), seen: new Set(), sorted: new Set(), missed: new Set(), hint: {}, byBin: {} };
   beach.bins = ['recycle', 'trash', 'special'].concat(beach.dep ? ['deposit'] : []); beach.drawer = false;
-  binsEl.innerHTML = beach.bins.map((b, i) => `<button type="button" data-bin="${b}" class="bin bin-${b}" title="${BIN_NAMES[b]} (key ${i + 1})">${binArt(b)}<span>${BIN_NAMES[b]}</span><kbd>${i + 1}</kbd></button>`).join('');
+  binsEl.innerHTML = beach.bins.map((b, i) => `<button type="button" data-bin="${b}" class="bin bin-${b}" title="${BIN_NAMES[b]} (key ${i + 1})">${binArt(b)}<span>${BIN_NAMES[b]}</span><kbd>${i + 1}</kbd></button>`).join('')
+    + (beach.dep ? '' : `<div class="bin noDep" title="${s.state} has no bottle deposit, so there is nowhere to return a bottle for cash"><i>5¢</i><span>Not in ${s.state.length > 10 ? 'this state' : s.state}</span></div>`);
   document.body.classList.remove('acted', 'cardOn');
   document.getElementById('barName').textContent = label(s);
   document.getElementById('barPlace').textContent = `${s.county ? s.county + ', ' : ''}${STATE_ABBR[s.state] || s.state}`;
@@ -2562,7 +2572,7 @@ function hud(s, info) {
     <div class="kicker">What would stop this litter</div>
     <h3>${dep ? `${s.state} has had a bottle deposit since ${dep}` : `${s.state} has no bottle deposit`}</h3>
     <div class="muted" style="font-size:.84rem">Across ${fmt(C.deposit.surveys + C.noDeposit.surveys)} NOAA surveys, beaches in states without a deposit carry <b>${C.ratio}×</b> the share of drink containers (${C.noDeposit.bevShare}% vs ${C.deposit.bevShare}%). Here: <b>${s.bevShare == null ? 'none found' : s.bevShare + '%'}</b>.</div>
-    <button class="btn" type="button" id="openEv">See the evidence and act</button>`;
+    <button class="linkBtn" type="button" id="openEv">See the evidence and act →</button>`;
   beach.policyShown = false; clearTimeout(stageT.policy); clearTimeout(stageT.walk);
   document.getElementById('openEv').onclick = () => openEvidence(s);
   document.getElementById('walk').textContent = items.length ? 'Click an item to learn about it · drag it into a bin to clean it up' : 'NOAA surveyors found no litter here · scroll or drag to walk the shore';
@@ -2590,11 +2600,57 @@ function showReport() {
       <div><b>${beach.sorted.size} / ${info.types.length}</b><span>types of litter you sorted</span></div>
     </div>` : `<div class="muted" style="font-size:.86rem">Walk the strip first: drag a few items into the bins, and your own tally shows up here.</div>`}
     ${top && top.policy && top.policy !== 'deposit' ? `<div class="muted" style="font-size:.8rem">Also here: the biggest share was ${top.name.toLowerCase()} (${share}%). ${POLICY[top.policy] ? `The policy aimed at that, ${POLICY[top.policy].charAt(0).toLowerCase() + POLICY[top.policy].slice(1)}, is next on our list.` : ''}</div>` : ''}
-    <div class="row2"><button class="btn" type="button" id="repEv">See the evidence and act</button><button class="btn ghost" type="button" id="repClose">Keep walking</button></div>
+    <div class="row2"><button class="btn" type="button" id="repEv">See the evidence and act</button><button class="btn ghost" type="button" id="repCard">Save postcard</button><button class="btn ghost" type="button" id="repClose">Keep walking</button></div>
     <div class="muted" style="font-size:.72rem">Your cleanup here is a learning walk; it is not added to any dataset.</div></div>`;
   report.classList.add('on');
   document.getElementById('repClose').onclick = () => report.classList.remove('on');
   document.getElementById('repEv').onclick = () => { report.classList.remove('on'); openEvidence(s); };
+  document.getElementById('repCard').onclick = e => savePostcard(s, e.currentTarget);
+}
+// a shareable 1200×1600 postcard of this beach's receipt, drawn in the browser (nothing is uploaded)
+async function savePostcard(s, btn) {
+  const old = btn.textContent; btn.textContent = 'Drawing…'; btn.disabled = true;
+  try {
+    await Promise.all(['600 64px "Source Serif 4"', '500 24px "IBM Plex Mono"', '400 24px "IBM Plex Sans"', '600 24px "IBM Plex Sans"'].map(f => document.fonts.load(f).catch(() => {})));
+    const W = 1200, H = 1600, PH = 900, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const x = cv.getContext('2d'), ph = PHOTOS[s.id], rate = depRate(s.state), bc = bevCounts(s), nBev = bc.reduce((a, [, v]) => a + v, 0), dep = D.depositStates[s.state];
+    const SERIF = '"Source Serif 4", Georgia, serif', MONO = '"IBM Plex Mono", ui-monospace, monospace', SANS = '"IBM Plex Sans", system-ui, sans-serif';
+    const wrap = (t, x0, y, w, lh) => { const words = t.split(' '); let line = ''; for (const wd of words) { const test = line ? line + ' ' + wd : wd; if (x.measureText(test).width > w && line) { x.fillText(line, x0, y); y += lh; line = wd; } else line = test; } if (line) x.fillText(line, x0, y); return y + lh; };
+    // photo (or a night-sea gradient when the beach has none)
+    const g0 = x.createLinearGradient(0, 0, 0, PH); g0.addColorStop(0, '#0d2233'); g0.addColorStop(1, '#03080d'); x.fillStyle = g0; x.fillRect(0, 0, W, PH);
+    if (ph) { const im = new Image(); im.src = ph.hd || ph.src; await im.decode().catch(() => {}); if (im.naturalWidth) { const k = Math.max(W / im.naturalWidth, PH / im.naturalHeight), w = im.naturalWidth * k, h = im.naturalHeight * k; x.drawImage(im, (W - w) / 2, (PH - h) / 2, w, h); } }
+    const g1 = x.createLinearGradient(0, PH * 0.35, 0, PH); g1.addColorStop(0, 'rgba(3,8,14,0)'); g1.addColorStop(1, 'rgba(3,8,14,.9)'); x.fillStyle = g1; x.fillRect(0, 0, W, PH);
+    const g2 = x.createLinearGradient(0, 0, 0, 160); g2.addColorStop(0, 'rgba(3,8,14,.55)'); g2.addColorStop(1, 'rgba(3,8,14,0)'); x.fillStyle = g2; x.fillRect(0, 0, W, 160);
+    // brand
+    x.fillStyle = '#4cc9f0'; x.fillRect(64, 56, 26, 26); x.fillStyle = '#ffa94d'; x.beginPath(); x.moveTo(90, 56); x.lineTo(90, 82); x.lineTo(64, 82); x.fill();
+    x.fillStyle = '#fff'; x.font = `600 30px ${SERIF}`; x.textBaseline = 'middle'; x.fillText('Shoreline Ledger', 104, 70); x.textBaseline = 'alphabetic';
+    // front text
+    x.fillStyle = '#bfe6f5'; x.font = `500 22px ${MONO}`; x.fillText(`${label(s)} · ${s.county ? s.county + ', ' : ''}${s.state}`.toUpperCase().slice(0, 70), 64, PH - 300);
+    x.fillStyle = '#fff'; x.font = `600 64px ${SERIF}`; x.fillText('What NOAA volunteers found here', 64, PH - 225);
+    x.fillStyle = '#ffcf7a'; x.font = `600 120px ${SERIF}`; x.fillText(money(nBev * rate), 64, PH - 88);
+    const mw = x.measureText(money(nBev * rate)).width;
+    x.fillStyle = '#dfe7ec'; x.font = `400 26px ${SANS}`;
+    wrap(dep ? `in bottle deposits left on the sand, at today's ${rate}¢` : `if ${s.state} paid a 10¢ deposit, as Oregon and Michigan do`, 64 + mw + 36, PH - 150, W - 64 - mw - 100, 34);
+    x.font = `600 24px ${SANS}`; wrap(`${fmt(nBev)} drink containers in ${fmt(s.items)} pieces of litter · ${s.surveys} NOAA survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)}`, 64 + mw + 36, PH - 76, W - 64 - mw - 100, 30);
+    // back: paper and receipt
+    x.fillStyle = '#f7f3ea'; x.fillRect(0, PH, W, H - PH);
+    x.fillStyle = '#7a6f5c'; x.font = `500 20px ${MONO}`; x.fillText('UNCLAIMED DEPOSIT RECEIPT', 64, PH + 70);
+    let y = PH + 130; x.font = `500 28px ${MONO}`; x.fillStyle = '#23272b';
+    for (const [n, v] of bc) { x.textAlign = 'left'; x.fillText(n, 64, y); x.textAlign = 'right'; x.fillText(`${fmt(v)} × ${rate}¢`, W - 300, y); x.fillText(money(v * rate), W - 64, y); y += 48; }
+    x.textAlign = 'left'; x.strokeStyle = '#b9b3a6'; x.setLineDash([8, 6]); x.beginPath(); x.moveTo(64, y - 18); x.lineTo(W - 64, y - 18); x.stroke(); x.setLineDash([]);
+    y += 30; x.font = `600 36px ${MONO}`; x.fillText(dep ? 'UNCLAIMED DEPOSITS' : `IF ${s.state.toUpperCase()} PAID 10¢`, 64, y); x.textAlign = 'right'; x.fillText(money(nBev * rate), W - 64, y); x.textAlign = 'left';
+    y += 70; x.font = `400 26px ${SANS}`; x.fillStyle = '#3b4146';
+    y = wrap(`Drink containers were ${s.bevShare == null ? 'not found' : s.bevShare + '%'} of the litter here. Overall they are ${C.noDeposit.bevShare}% of beach litter in states without a bottle deposit and ${C.deposit.bevShare}% in states with one: about ${(+C.ratio).toFixed(1)}× the share, across ${fmt(C.deposit.surveys + C.noDeposit.surveys)} NOAA surveys.`, 64, y, W - 128, 36);
+    x.font = `400 20px ${SANS}`; x.fillStyle = '#7a6f5c';
+    y = wrap('A pattern, not proof. Upper-bound estimate: count × deposit on NOAA\'s survey stretch; not every container was redeemable.', 64, y + 10, W - 128, 28);
+    x.fillText('Made at gigima711.github.io/shoreline-ledger · Data: NOAA MDMAP', 64, H - 56);
+    if (ph) { const cr = `Photo: ${ph.a} · ${ph.l} · ${ph.site}`; x.font = `400 17px ${SANS}`; const cw = x.measureText(cr).width; x.fillStyle = 'rgba(3,8,14,.6)'; x.fillRect(W - cw - 40, 20, cw + 24, 30); x.fillStyle = '#e8eef1'; x.fillText(cr, W - cw - 28, 41); }
+    const url = URL.createObjectURL(await new Promise(r => cv.toBlob(r, 'image/png')));
+    const a = document.createElement('a'); a.href = url; a.download = `shoreline-ledger-${label(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.png`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000); btn.textContent = 'Saved ✓';
+    if (DEBUG) window.__postcard = cv.toDataURL('image/png');
+  } catch (e) { logOnce('postcard', e); btn.textContent = 'Could not draw it'; }
+  setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2500);
 }
 
 // How each report describes the animal, read case by case (2026-11-20): [gear, where on the body, outcome a=freed/released d=died u=not stated, report mentions a wound, optional wording].
