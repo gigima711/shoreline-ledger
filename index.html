@@ -201,6 +201,9 @@ body.dragging #bins { box-shadow: 0 0 0 2px rgba(127,211,234,.5); } body.draggin
 #beachHud .row2, #report .row2 { display: flex; gap: 8px; flex-wrap: wrap; }
 #report { position: fixed; inset: 0; z-index: 30; display: none; place-items: center; background: rgba(3,6,10,.55); }
 #report.on { display: grid; }
+#beachHud .hudLine { font-size: .86rem; color: var(--ink-2); } #beachHud .hudLine b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; }
+#beachHud details.about summary { cursor: pointer; font-size: .78rem; color: var(--accent); list-style: none; } #beachHud details.about summary::after { content: ' ▾'; } #beachHud details.about[open] summary::after { content: ' ▴'; }
+#beachHud details.about[open] { display: grid; gap: 8px; } #beachHud details.about > summary { margin-bottom: 2px; }
 #ledgerChip { right: 24px; bottom: 132px; display: none; align-items: baseline; gap: 10px; padding: 8px 14px; font-size: .78rem; color: var(--ink-2); }
 #ledgerChip.on { display: flex; } #ledgerChip b { font: 600 1.05rem var(--font-mono); color: #ffcf7a; }
 #ledgerChip.bump b { animation: coinBump .5s ease-out; } @keyframes coinBump { 30% { transform: scale(1.25); color: #fff; } }
@@ -264,9 +267,14 @@ body.beach #beachHud { top: calc(var(--topbar) + 60px); width: min(300px, calc(1
 #zoom span { font-size: 0.68rem; color: var(--ink-2); }
 body.beach #mapLegend, body.beach #zoom { display: none; }
 #evidence { position: fixed; inset: var(--topbar) 0 0 0; z-index: 4; display: none; background: #f6f4ef; color: #1b2a35; overflow-y: auto;
-  --ink: #1b2a35; --ink-2: #55636c; --glass: #ffffff; --glass-line: #e4e0d8; --accent: #1f6fb2; --deposit: #0072b2; --nodeposit: #b85000; --shadow: none; color-scheme: light; }
+  --ink: #1b2a35; --ink-2: #55636c; --glass: #ffffff; --glass-line: #e4e0d8; --accent: #1f6fb2; --deposit: #1a86b8; --nodeposit: #c46a12; --shadow: none; color-scheme: light; }
 #evidence .btn:not(.ghost) { color: #04121c; } #evidence .btn.ghost { color: var(--ink); border-color: #cfc9bd; } #evidence svg text { fill: #55636c; } #evidence .chartwrap .grid { stroke: #e4e0d8; } #evidence textarea { background: #fff; }
 #evidence.on { display: block; }
+#evidence { background: linear-gradient(#03060a, #0e1820 18px, #f6f4ef 72px) no-repeat local, #f6f4ef; }   /* a short dusk band carries the dark globe page into the paper */
+#evidence .inner { margin-top: 56px; }
+#evidence a:not(.btn) { color: var(--accent); text-underline-offset: 2px; } #evidence a:not(.btn):visited { color: var(--accent); }
+#evidence .lnk { font-size: .88rem; font-weight: 600; }
+#evidence #msg { font: 1rem/1.65 var(--font-display, Georgia, serif); color: #23272b; background: #fffdf7; border: 1px solid #e4dccb; border-left: 4px solid #e4dccb; border-radius: 4px; padding: 22px 24px; min-height: 300px; box-shadow: 0 10px 24px -18px rgba(40,30,10,.35); }
 #evBeach[hidden] { display: none !important; }
 #evidence .evTake { display: grid; gap: 8px; padding: 16px 18px; border-radius: 10px; background: #fff; border: 1px solid #e4e0d8; border-left: 4px solid #1b2a35; }
 #evidence .evTake div { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: baseline; font-size: .95rem; line-height: 1.5; }
@@ -490,6 +498,8 @@ body:not(.booting) #skipIntro { opacity: 0; pointer-events: none; }
 #intro input[type=search]::placeholder { color: rgba(223,231,236,.62); }
 /* the finding's number: amber (it is the no-deposit share), underline drawn on */
 #intro h1 #introRatio { color: #ffa94d; text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 100% 2px no-repeat; padding-bottom: 3px; }
+#intro h1 #introRatio { display: block; width: max-content; font: 600 clamp(3.2rem, 6.5vw, 4.8rem)/1 var(--font-mono); font-style: normal; letter-spacing: -.02em; margin: 10px 0 8px; background: none; padding: 0; text-shadow: 0 0 40px rgba(255,169,77,.25); }
+@media (max-height: 800px) and (min-width: 761px) { #intro h1 #introRatio { font-size: 2.7rem; margin: 4px 0 2px; } }
 #intro h1 #introRatio.lit { animation: ratioLit 1.2s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes ratioLit { 0% { color: #fff; background-size: 0 2px; text-shadow: 0 0 0 rgba(255,169,77,0); } 35% { color: #ffa94d; background-size: 100% 2px; text-shadow: 0 0 18px rgba(255,169,77,.45); } 100% { color: #ffa94d; background-size: 100% 2px; text-shadow: 0 0 0 rgba(255,169,77,0); } }
 /* replay: a ghost link in the bottom-left corner */
@@ -685,7 +695,7 @@ body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun 
       </ol>
       <label for="msg" class="muted" style="font-size:.8rem">Your letter</label>
       <textarea id="msg"></textarea>
-      <div class="row2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="copy" type="button">Copy letter</button><a class="btn ghost" id="gmail" href="https://mail.google.com/mail/?view=cm&amp;fs=1" target="_blank" rel="noopener">Open in Gmail</a><a class="btn ghost" id="outlook" href="https://outlook.live.com/mail/0/deeplink/compose" target="_blank" rel="noopener">Open in Outlook</a><a id="mailto" href="#" class="muted" style="font-size:.8rem">or your email app</a></div>
+      <div class="row2" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="copy" type="button">Copy letter</button><span class="muted" style="font-size:.84rem">or open it in</span><a class="lnk" id="gmail" href="https://mail.google.com/mail/?view=cm&amp;fs=1" target="_blank" rel="noopener">Gmail</a><a class="lnk" id="outlook" href="https://outlook.live.com/mail/0/deeplink/compose" target="_blank" rel="noopener">Outlook</a><a id="mailto" href="#" class="lnk">your email app</a></div>
       <span class="muted" id="copied" aria-live="polite" style="font-size:.82rem"></span>
     </div>
     <p class="muted" style="font-size:.78rem">Data: NOAA Marine Debris Monitoring and Assessment Project, exported 14 Nov 2026 (mdmap.orr.noaa.gov), U.S. states only. Other studies with other data point the same way: Schuyler et al. (Marine Policy, 2018) and Clean Virginia Waterways (2020), both with Ocean Conservancy cleanup data, found fewer drink containers on deposit-state shores, and Reloop's 2025 review <a href="https://www.reloopplatform.org/the-evidence-is-in-what-the-data-says-about-bottle-bills-litter-and-the-economy/" target="_blank" rel="noopener">Littered with evidence</a> found drink items made up 54% less of litter by count where deposit systems run.</p>
@@ -1124,7 +1134,7 @@ const nowT = () => TIME_OVERRIDE || new Date();
 function updateClock() {
   const el = document.getElementById('clock'); if (!el) return; const d = nowT();
   el.querySelector('b').textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  el.querySelector('span').textContent = 'UTC ' + d.toISOString().slice(11, 16) + ' · live day and night';
+  el.querySelector('span').textContent = ''; el.title = `Your time. UTC ${d.toISOString().slice(11, 16)}. The globe's day and night follow the real sun.`;
 }
 globeScene.add(new THREE.AmbientLight(0xc4cedc, PAL.amb)); const ambL = globeScene.children[globeScene.children.length - 1];
 if (DEBUG) window.__g = { cam: globeCam, controls, earth, atmo, AU, skyStars, sun, SUN_W, scene: globeScene, ambL, ll2v };   // even base light; the night side is drawn by the terminator shader   // night side: dim, still readable   // the night side stays readable: dim, not black
@@ -1340,7 +1350,7 @@ const sweep = (() => {
     // captions: few words, few changes, each held ≥1.4 s; under the globe so the eye stays on it
     if (t >= TL.depA) cap.classList.add('on');
     cap.classList.toggle('key', t >= othersA && t < TL.gridA);   // a two-dot key replaces a sentence about the amber states
-    if (t >= TL.depA && bi < beats.length) { if (bi !== lastBeat && FREEZE == null) { lastBeat = bi; clink(bi); } setK(String(beats[bi].y)); setL('<span class="b">Ten states</span> add a bottle deposit'); setS('', 'dep'); }
+    if (t >= TL.depA && bi < beats.length) { if (bi !== lastBeat && FREEZE == null) { lastBeat = bi; clink(bi); } setK(String(beats[bi].y)); setL('States add a <span class="b">bottle deposit</span>'); setS('', 'dep'); }
     else if (t >= othersA && t < TL.dotsA) { setK('1971 – 2002'); setL('<span class="b">Ten states</span> add a bottle deposit'); }
     // the beaches
     if (t >= TL.dotsA) { const k = seg(t, TL.dotsA, TL.dotsB); b.U.uT.value = -0.02 + k * 1.04;
@@ -2142,7 +2152,7 @@ function applyTimeOfDay(s, L, reg) {
   const realPhase = elev >= 12 ? 'day' : elev >= 2 ? 'golden' : elev >= -8 ? 'twilight' : 'night';
   dayPhase = liveSky ? realPhase : 'day';
   const tEl = document.getElementById('barTime'), names = { day: 'daytime', golden: 'golden hour', twilight: 'twilight', night: 'night' };
-  if (tEl) { tEl.textContent = `${{ day: '☀', golden: '🌅', twilight: '🌆', night: '🌙' }[realPhase]} ${localTime(s, d)} local`; tEl.title = `It is ${names[realPhase]} at this beach now. ${liveSky ? 'The sky shows it as it is.' : 'Shown in daylight so the litter is easy to see.'}`; }
+  if (tEl) { tEl.textContent = `${{ day: '☀', golden: '🌅', twilight: '🌆', night: '🌙' }[realPhase]} ${localTime(s, d)} local${!liveSky && realPhase !== 'day' ? ' · shown in daylight' : ''}`; tEl.title = `It is ${names[realPhase]} at this beach now. ${liveSky ? 'The sky shows it as it is.' : 'Shown in daylight so the litter is easy to see.'}`; }
   const lb = document.getElementById('barLight');
   if (lb) { lb.hidden = realPhase === 'day'; lb.textContent = liveSky ? 'Show in daylight' : `Show the ${names[realPhase]} sky`; lb.setAttribute('aria-pressed', String(liveSky)); }
   nightSky.visible = dayPhase === 'night' || dayPhase === 'twilight';
@@ -2179,6 +2189,7 @@ function modelMesh(name, len, tint) {
 const CAP = 30;   // most a beach shows; small records show fewer (see slotsFor)
 const slotsFor = total => Math.max(6, Math.min(CAP, Math.round(6 + 7 * Math.log10(total + 1))));
 let debrisGroup = null, items = [], beach = null;
+const SPOT_GEO = new THREE.RingGeometry(0.2, 0.25, 40).rotateX(-Math.PI / 2), SPOT_MAT = new THREE.MeshBasicMaterial({ color: '#ffb84d', transparent: true, opacity: 0.32, depthWrite: false });
 function placeDebris(s) {
   if (debrisGroup) { beachScene.remove(debrisGroup); debrisGroup.traverse(o => { o.geometry?.dispose(); o.material?.dispose?.(); }); }
   debrisGroup = new THREE.Group(); items = [];
@@ -2205,11 +2216,12 @@ function placeDebris(s) {
       // small things are drawn up to 2.5x life size so they read on screen; big things (jugs, tyres, crates) stay close to life size next to the animals
       const life = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3()).length() * (t.scale || 1);
       const boost = THREE.MathUtils.clamp(2.5 - (life - 0.12) / 0.4 * 1.3, 1.2, 2.5);
-      const sc = (t.scale || 1) * (0.85 + rand() * 0.4) * boost;
+      const sc = (t.scale || 1) * (0.85 + rand() * 0.4) * boost * 1.25;   // a touch larger than before (design review) so pieces read against the sand
       m.position.set(x, sandHeight(x, z) + (m.userData.real ? -0.012 * sc : 0.01 * sc - rand() * 0.006 * sc), z);   // resting on the sand, slightly settled
       m.rotation.set(m.userData.real ? rand() * 0.16 - 0.08 : rand() * 0.6 - 0.3, rand() * Math.PI * 2, m.userData.real ? rand() * 0.16 - 0.08 : rand() * 0.6 - 0.3); m.scale.setScalar(sc);
       m.castShadow = m.receiveShadow = true;
-      const it = { t, mesh: m, home: m.position.clone(), rep: e.n / e.shown, done: false };
+      const ring = new THREE.Mesh(SPOT_GEO, SPOT_MAT); ring.position.set(x, sandHeight(x, z) + 0.012, z); ring.scale.setScalar(THREE.MathUtils.clamp(sc * 0.32, 0.55, 1.05)); ring.renderOrder = 1; debrisGroup.add(ring);   // faint amber halo so litter stands out from the sand
+      const it = { t, mesh: m, ring, home: m.position.clone(), rep: e.n / e.shown, done: false };
       m.userData.item = it; items.push(it); debrisGroup.add(m);
     }
   });
@@ -2250,7 +2262,9 @@ function addEnds(group, s) {
 let walkX = 0, walkTarget = 0, look = 0;
 const WALK_MIN = -BEACH_L / 2 + 2, WALK_MAX = BEACH_L / 2 - 2;
 const walkTo = x => { walkTarget = THREE.MathUtils.clamp(x, WALK_MIN, WALK_MAX); };
-function setBeachCam() { beachCam.position.set(walkX, 1.45, 6.6); beachCam.lookAt(walkX + look, 0.5, 1.6); }   // keeps the horizon (and landmarks) clear of the header bar
+const tall = () => innerWidth / innerHeight < 0.8;   // phones held upright see a narrow slice: a wider lens, tilted down at the sand
+function setBeachCam() { if (tall()) { beachCam.position.set(walkX, 1.7, 6.4); beachCam.lookAt(walkX + look, 0.15, 2.0); } else { beachCam.position.set(walkX, 1.45, 6.6); beachCam.lookAt(walkX + look, 0.5, 1.6); } }
+function fitBeachFov() { const f = tall() ? 56 : 42; if (beachCam.fov !== f) { beachCam.fov = f; beachCam.updateProjectionMatrix(); } }   // keeps the horizon (and landmarks) clear of the header bar
 addEventListener('wheel', e => { if (mode === 'beach' && !e.target.closest('.ui')) walkTo(walkTarget + (e.deltaY + e.deltaX) * 0.006); }, { passive: true });
 addEventListener('keydown', e => { if (mode !== 'beach' || /TEXTAREA|INPUT/.test(e.target.tagName)) return; if (e.key === 'ArrowRight') walkTo(walkTarget + 1.5); if (e.key === 'ArrowLeft') walkTo(walkTarget - 1.5); if (e.key === 'Escape') hideCard(); });
 
@@ -2406,7 +2420,7 @@ function revealPolicy() {
   beach.policyShown = true; document.getElementById('policy').classList.add('on');
 }
 function collect(it, bin) {
-  it.done = true; it.mesh.visible = false; beach.cleaned++;
+  it.done = true; it.mesh.visible = false; if (it.ring) it.ring.visible = false; beach.cleaned++;
   if (beach.cleaned >= 2) revealPolicy();
   beach.byBin[bin] = (beach.byBin[bin] || 0) + 1;
   if (it.t.dep) { const c = depRate(beach.site.state); beach.coins += c; beach.coinN++; coinPop(bin, c); }
@@ -2525,15 +2539,18 @@ function renderHud() {
     return `<button type="button" class="trow${left ? '' : ' done'}${beach.sorted.has(t.id) ? ' known' : ''}" data-t="${t.id}"><i style="background:${typeColor(t)}"></i><span>${t.name}</span><span class="num">${fmt(e.n)}</span><span class="left">${left ? left + ' on sand' : '✓'}</span></button>`; }).join('');
   const sortedN = beach.sorted.size, nT = info.types.length;
   h.innerHTML = `
+    <div class="hudLine">${s.items ? `<b>${fmt(s.items)}</b> items counted${s.bevShare != null ? ` · <b>${s.bevShare}%</b> drink containers` : ''}` : 'No litter counted'}</div>
     ${beach.scene.hurtCase ? `<div class="note" style="border-left-color:var(--case);font-size:.8rem">A real report ${beach.scene.hurtDist < 3 ? 'from this beach' : `${Math.round(beach.scene.hurtDist)} km away`}: ${beach.scene.hurt}, ${lookText(beach.scene.hurtCase)}. The 3D animal stands in for it; tap it for the report.</div>` : beach.scene.regional ? `<div class="note" style="border-left-color:var(--case);font-size:.8rem">Nearest entanglement report: ${beach.scene.regional[0][1]}, ${beach.scene.regional[0][2]} (${fmt(Math.round(beach.scene.regional[1]))} km away). <a href="${beach.scene.regional[0][8]}" target="_blank" rel="noopener">Read it ↗</a> Too far away to show on this beach.</div>` : ''}
+    <details class="about"${beach.about ? ' open' : ''}><summary>About this beach</summary>
     ${s.items === 0 ? `<div class="muted" style="font-size:.84rem">No litter was counted here in ${s.surveys} NOAA survey${s.surveys > 1 ? 's' : ''}. The pebbles, driftwood and seaweed are just the natural beach.</div>` : `<div class="muted" style="font-size:.78rem">${info.total > items.length ? `The ${items.length} models on the sand keep the real mix of the ${fmt(info.total)} items found.` : 'Every model on the sand is one real item.'} Drawn larger than life so you can spot them. The litter follows NOAA's counts; animals, sky and landmarks are illustrative and follow the ${LOOK[regionOf(s)].label}, not this exact spot. <button type="button" class="linkBtn" id="seePhoto">${PHOTOS[s.id] ? 'See the real photo of this shore' : 'Where this beach is'}</button></div>`}
     ${cleanNote(s) ? `<div class="note good">${cleanNote(s)}</div>` : ''}
-    <div class="src">Source: NOAA Marine Debris Monitoring and Assessment Project (MDMAP) · ${s.surveys} survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)} · ${fmt(s.items)} items counted${s.items && s.bevShare != null ? ` · ${s.bevShare}% drink containers` : ''}</div>
+    <div class="src">Source: NOAA Marine Debris Monitoring and Assessment Project (MDMAP) · ${s.surveys} survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)} · ${fmt(s.items)} items counted${s.items && s.bevShare != null ? ` · ${s.bevShare}% drink containers` : ''}</div></details>
     ${rows ? `<button type="button" class="drawer" id="drawer" aria-expanded="${beach.drawer}">What was found <em>${nT} types ${beach.drawer ? '▴' : '▾'}</em></button>
     <div class="prog" title="Types sorted"><i style="width:${nT ? sortedN / nT * 100 : 0}%"></i></div>
     <div class="muted" style="font-size:.74rem">Types sorted: <b>${sortedN} of ${nT}</b></div>
     ${beach.drawer ? `<div class="types">${rows}</div>` : ''}` : ''}`;
   h.querySelector('#drawer')?.addEventListener('click', () => { beach.drawer = !beach.drawer; renderHud(); });
+  h.querySelector('details.about')?.addEventListener('toggle', e => { beach.about = e.target.open; });
   h.classList.add('on');
   h.querySelectorAll('[data-t]').forEach(b => b.onclick = () => jumpTo(TYPES.find(t => t.id === b.dataset.t)));
 }
@@ -3454,6 +3471,8 @@ function beachIntro(s) {
 function beachStart(s) {   // first moments on the sand: a walking hint, then the policy note
   {
     if (!beach) return;
+    fitBeachFov();
+    if (tall() && items.length) { const x0 = Math.min(...items.map(i => i.home.x)); walkX = walkTarget = THREE.MathUtils.clamp(x0 + 0.4, WALK_MIN, WALK_MAX); }   // start where the first piece lies, so the phone opens on litter, not empty sand
     const w = document.getElementById('walk'); w.classList.add('on'); clearTimeout(stageT.walk); stageT.walk = setTimeout(() => w.classList.remove('on'), 7000);
     if (!items.length) revealPolicy(); else { clearTimeout(stageT.policy); stageT.policy = setTimeout(revealPolicy, 25000); }
   };
@@ -3723,7 +3742,7 @@ function frameGlobe() {   // on wide screens the globe is drawn right of centre 
 frameGlobe();
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
-  [globeCam, beachCam].forEach(c => { c.aspect = innerWidth / innerHeight; c.updateProjectionMatrix(); }); frameGlobe();
+  [globeCam, beachCam].forEach(c => { c.aspect = innerWidth / innerHeight; c.updateProjectionMatrix(); }); fitBeachFov(); frameGlobe();
   sizeLabels();
   if (mode === 'beach' && beach) drawMini();
 });
