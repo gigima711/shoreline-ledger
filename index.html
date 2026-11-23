@@ -222,6 +222,8 @@ body:not(.beach) #ledgerChip { display: none !important; }
 #report .receipt .you { margin-top: 6px; color: #8a5a12; font-weight: 600; }
 #report .receipt .ft { color: #6b6f72; font-size: .7rem; margin-top: 6px; }
 #report .inner { width: min(520px, calc(100% - 40px)); background: rgba(10,16,22,.95); border: 1px solid var(--glass-line); border-radius: 14px; padding: 22px; display: grid; gap: 12px; }
+#report { overflow-y: auto; padding: 24px 0; -webkit-overflow-scrolling: touch; } #report .inner { margin: auto; }
+@media (max-width: 760px) { #report { padding: 12px 0 28px; } #report.on { place-items: start center; } #report .inner { padding: 18px 16px; gap: 10px; } #report .inner h2 { font-size: 1.4rem; } #report .receipt .ft { font-size: .62rem; } #report .row2 .btn { flex: 1 1 auto; } }
 
 
 #beachBar { left: 0; right: 0; top: var(--topbar); height: 44px; display: none; align-items: center; gap: 16px; padding: 0 24px; background: rgba(14, 26, 36, 0.94); border-bottom: 1px solid var(--glass-line); z-index: 5; }
@@ -2590,17 +2592,17 @@ function showReport() {
       <div class="hd">SHORELINE LEDGER</div>
       <div class="sub">${s.state} · ${beach.dep ? `deposit since ${beach.dep} (${rate}¢ today)` : 'no bottle deposit'}<br>NOAA counted here: ${s.surveys} survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)} · ${fmt(s.items)} items</div>
       <hr>${bc.map(([n, v]) => `<div class="ln"><span>${n}</span><span>${fmt(v)} × ${rate}¢</span><span>${money(v * rate)}</span></div>`).join('')}<hr>
-      <div class="tot"><span>${head}</span><span>${money(nBev * rate)}</span></div>
+      <div class="tot"><span>${head}</span><span>${money(nBev * rate)}</span></div>${nBev ? '' : '<div class="ft">No drink containers in NOAA\'s count here.</div>'}
       ${beach.coinN ? `<div class="ln you"><span>Your walk: ${beach.coinN} container${beach.coinN > 1 ? 's' : ''} sorted</span><span></span><span>${money(beach.coins)}</span></div>` : ''}
       <div class="ft">Drink containers were ${s.bevShare == null ? 'not found' : s.bevShare + '%'} of the litter here${stShare != null ? ` (${s.state}: ${stShare}%)` : ''}. Overall: ${C.noDeposit.bevShare}% in no-deposit states, ${C.deposit.bevShare}% in deposit states.<br>Estimate at ${beach.dep ? "today's rate" : 'a 10¢ deposit, as in Oregon and Michigan'}: count × deposit, on NOAA's survey stretch only. An upper bound: not every container was redeemable (wine and liquor bottles, bottles that drifted in from far away).</div>
     </div>
+    <div class="row2"><button class="btn" type="button" id="repCard">Save postcard</button><button class="btn ghost" type="button" id="repEv">See the evidence and act</button><button class="btn ghost" type="button" id="repClose">Keep walking</button></div>
     ${beach.cleaned ? `<div class="facts">
       <div><b>${beach.cleaned} / ${items.length}</b><span>items you cleaned on this stretch</span></div>
       <div><b>${Math.round(beach.firstTypes.size / Math.max(1, new Set([...beach.sorted, ...beach.missed]).size) * 100)}%</b><span>types sorted right the first time</span></div>
       <div><b>${beach.sorted.size} / ${info.types.length}</b><span>types of litter you sorted</span></div>
     </div>` : `<div class="muted" style="font-size:.86rem">Walk the strip first: drag a few items into the bins, and your own tally shows up here.</div>`}
     ${top && top.policy && top.policy !== 'deposit' ? `<div class="muted" style="font-size:.8rem">Also here: the biggest share was ${top.name.toLowerCase()} (${share}%). ${POLICY[top.policy] ? `The policy aimed at that, ${POLICY[top.policy].charAt(0).toLowerCase() + POLICY[top.policy].slice(1)}, is next on our list.` : ''}</div>` : ''}
-    <div class="row2"><button class="btn" type="button" id="repEv">See the evidence and act</button><button class="btn ghost" type="button" id="repCard">Save postcard</button><button class="btn ghost" type="button" id="repClose">Keep walking</button></div>
     <div class="muted" style="font-size:.72rem">Your cleanup here is a learning walk; it is not added to any dataset.</div></div>`;
   report.classList.add('on');
   document.getElementById('repClose').onclick = () => report.classList.remove('on');
