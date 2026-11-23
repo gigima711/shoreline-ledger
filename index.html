@@ -601,8 +601,8 @@ body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun 
     <option value="foam" disabled>Foam container ban (data being compiled)</option>
     <option value="smoke" disabled>Smoke-free beach (data being compiled)</option>
   </select>
-  <div class="row"><i class="dot" style="background:var(--deposit)"></i><span id="lgOn">Blue: the state has a bottle deposit law</span></div>
-  <div class="row"><i class="dot" style="background:var(--nodeposit)"></i><span id="lgOff">Amber: the state has no bottle deposit law</span></div>
+  <div class="row"><i class="dot" style="background:var(--deposit)"></i><span id="lgOn">Blue: beach in a state with a bottle deposit law</span></div>
+  <div class="row"><i class="dot" style="background:var(--nodeposit)"></i><span id="lgOff">Amber: beach in a state without one</span></div>
   <details class="lgKinds"><summary>What the marks mean</summary>
     <div class="row"><i class="dot" style="width:3px;height:14px;border-radius:2px;background:linear-gradient(0deg,#fff,rgba(255,255,255,0))"></i><span>Hover a beach: a beam rises; taller means more of its litter was drink containers (0–12%+)</span></div>
     <div class="row"><i class="dot" style="width:16px;height:10px;border-radius:3px;background:none;box-shadow:inset 0 0 0 1px rgba(130,222,255,0.6)"></i><span>Outlined abroad: countries and regions with a bottle deposit</span></div>
@@ -642,7 +642,7 @@ body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun 
     <div class="glass evcard limits" id="limits"></div>
     <div class="glass evcard">
       <div class="kicker">Close to home · the Great Lakes</div>
-      <h3>Michigan has a 10¢ deposit. Its neighbor Ohio, on Lake Erie, has none.</h3>
+      <h3 id="localHead">Michigan (10¢ deposit) vs Ohio (none): too close to call</h3>
       <div id="cmpLocal"></div>
       <p class="muted" id="localText"></p>
     </div>
@@ -3537,7 +3537,7 @@ function buildEvidence() {
   cmp(document.getElementById('cmpLocal'), [
     { name: 'Ohio', color: 'var(--nodeposit)', v: L.ohio.bevShare, ci: L.ohio.bevCI, n: L.ohio.surveys, sites: L.ohio.sites },
     { name: 'Michigan', color: 'var(--deposit)', v: L.michigan.bevShare, ci: L.michigan.bevCI, n: L.michigan.surveys, sites: L.michigan.sites }], 5.5, '%');
-  document.getElementById('localText').textContent = `Not enough evidence yet on the lakes: the 95% ranges overlap heavily (ratio ${L.ratioCI[0]}× to ${L.ratioCI[1]}×). Great Lakes beaches hold few drink containers, NOAA has run only ${L.ohio.surveys + L.michigan.surveys} surveys across the two states, and Lake Michigan's Illinois, Indiana and Wisconsin shores have almost no NOAA data. Adding Alliance for the Great Lakes cleanup records is our next step.`;
+  document.getElementById('localText').textContent = `Ohio's share is only ${L.ratio}× Michigan's, and the 95% range runs from ${L.ratioCI[0]}× (Michigan worse) to ${L.ratioCI[1]}×, so we can't say either state is cleaner. Great Lakes beaches hold few drink containers, NOAA has run only ${L.ohio.surveys + L.michigan.surveys} surveys across the two states, and Lake Michigan's Illinois, Indiana and Wisconsin shores have almost no NOAA data. Adding Alliance for the Great Lakes cleanup records is our next step.`;
   const letter = () => ({ body: document.getElementById('msg').value, subj: document.getElementById('actHead').textContent.replace(/^Write for /, 'Beach litter at ').replace(/^Send the evidence.*/, 'Beach litter and bottle deposits') });
   const quietCopy = async note => { const out = document.getElementById('copied'); try { await navigator.clipboard.writeText(letter().body); out.textContent = note; } catch (e) { out.textContent = ''; } };
   document.getElementById('mailto').addEventListener('click', e => { const { body, subj } = letter(); e.currentTarget.href = `mailto:?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`; quietCopy('Opening your email app. The letter is also copied, in case it opens empty.'); });
