@@ -217,6 +217,7 @@ body:not(.beach) #ledgerChip { display: none !important; }
 #report .receipt .ln { display: grid; grid-template-columns: 1fr auto 5.5em; gap: 10px; } #report .receipt .ln span:not(:first-child) { text-align: right; }
 #report .receipt hr { border: 0; border-top: 1px dashed #b9b3a6; margin: 8px 0; }
 #report .receipt .tot { display: flex; justify-content: space-between; font-weight: 700; font-size: .95rem; letter-spacing: .04em; }
+#report .receipt .you { margin-top: 6px; color: #8a5a12; font-weight: 600; }
 #report .receipt .ft { color: #6b6f72; font-size: .7rem; margin-top: 6px; }
 #report .inner { width: min(520px, calc(100% - 40px)); background: rgba(10,16,22,.95); border: 1px solid var(--glass-line); border-radius: 14px; padding: 22px; display: grid; gap: 12px; }
 
@@ -270,7 +271,7 @@ body.beach #mapLegend, body.beach #zoom { display: none; }
   --ink: #1b2a35; --ink-2: #55636c; --glass: #ffffff; --glass-line: #e4e0d8; --accent: #1f6fb2; --deposit: #1a86b8; --nodeposit: #c46a12; --shadow: none; color-scheme: light; }
 #evidence .btn:not(.ghost) { color: #04121c; } #evidence .btn.ghost { color: var(--ink); border-color: #cfc9bd; } #evidence svg text { fill: #55636c; } #evidence .chartwrap .grid { stroke: #e4e0d8; } #evidence textarea { background: #fff; }
 #evidence.on { display: block; }
-#evidence { background: linear-gradient(#03060a, #0e1820 18px, #f6f4ef 72px) no-repeat local, #f6f4ef; }   /* a short dusk band carries the dark globe page into the paper */
+#evidence { background: linear-gradient(#05080d 0 28px, #ffa94d 28px 31px, #f6f4ef 31px) no-repeat local, #f6f4ef; }   /* a short dusk band carries the dark globe page into the paper */
 #evidence .inner { margin-top: 56px; }
 #evidence a:not(.btn) { color: var(--accent); text-underline-offset: 2px; } #evidence a:not(.btn):visited { color: var(--accent); }
 #evidence .lnk { font-size: .88rem; font-weight: 600; }
@@ -665,9 +666,8 @@ body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun 
     <div class="kicker">The evidence · bottle deposits</div>
     <h2 id="evHead"></h2>
     <div class="fact" id="evFact"></div>
-    <div class="evTake" id="evTake"></div>
-    <div class="evLedger" id="evLedger"></div>
     <p class="muted">Ten states charge a refundable deposit (5–15¢) on drink containers. We compared every NOAA beach survey in those states with surveys elsewhere. The share of drink containers among all debris works as a yardstick across beaches of different sizes and survey methods.</p>
+    <div class="evTake" id="evTake"></div>
     <div class="glass evcard" id="coast"></div>
     <div class="glass evcard"><h3 id="hShare"></h3><div id="cmpShare"></div><p class="muted" style="font-size:.8rem">Plastic bottles, cans and glass bottles, as a share of every item counted. Whiskers: 95% range from re-sampling beaches.</p></div>
     <div class="glass chartwrap">
@@ -681,6 +681,7 @@ body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun 
     <div class="glass evcard limits" id="limits"></div>
     <details class="glass evcard capsBox"><summary><b id="hCaps"></b></summary><div id="cmpCaps"></div><p class="muted" style="font-size:.8rem">Plastic caps per plastic drink bottle. A deposit pays for the bottle, not the cap, so a working deposit could leave more caps per bottle behind. But most of this gap comes from Hawaii, where ocean-borne debris that drifts in from far away is mostly caps and fragments; leave Hawaii out and it nearly disappears. We treat it as a side check, not evidence.</p></details>
     <div id="evBeach" class="glass evcard evbeach" hidden></div>
+    <div class="evLedger" id="evLedger"></div>
     <div class="glass evcard" id="act">
       <div class="kicker">Act</div>
       <h3 id="actHead">Send the evidence to someone who can act on it</h3>
@@ -1399,7 +1400,7 @@ const sweep = (() => {
   }
   document.getElementById('replayIntro').addEventListener('click', () => run());   // a tap, so sound can play if it is turned on
   if (DEBUG) window.__opening = { run, finish, TL, beats };
-  return { start() { if (autoOK) run(); }, run, get running() { return running; } };
+  return { start() { if (autoOK) run(); }, run, finish() { if (running) finish(); }, get running() { return running; } };
 })();
 // light beam: rises from the beach under the pointer; height = share of drink containers in its litter (taller = more bottles and cans)
 const beamU = { uH: { value: 1 }, uR: { value: 1 }, uOp: { value: 0.75 }, uGrow: { value: 0 } };
@@ -2577,15 +2578,16 @@ function showReport() {
     <div class="kicker">Cleanup report</div><h2>${label(s)}</h2>
     <div class="receipt" role="table" aria-label="Deposit receipt">
       <div class="hd">SHORELINE LEDGER</div>
-      <div class="sub">${s.state} · ${beach.dep ? `${rate}¢ deposit since ${beach.dep}` : 'no bottle deposit'}<br>NOAA: ${s.surveys} survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)} · ${fmt(s.items)} items</div>
+      <div class="sub">${s.state} · ${beach.dep ? `deposit since ${beach.dep} (${rate}¢ today)` : 'no bottle deposit'}<br>NOAA counted here: ${s.surveys} survey${s.surveys > 1 ? 's' : ''}, ${yrs(s)} · ${fmt(s.items)} items</div>
       <hr>${bc.map(([n, v]) => `<div class="ln"><span>${n}</span><span>${fmt(v)} × ${rate}¢</span><span>${money(v * rate)}</span></div>`).join('')}<hr>
       <div class="tot"><span>${head}</span><span>${money(nBev * rate)}</span></div>
-      <div class="ft">Drink containers were ${s.bevShare == null ? 'not found' : s.bevShare + '%'} of the litter here${stShare != null ? ` (${s.state}: ${stShare}%)` : ''}. No-deposit states average ${C.noDeposit.bevShare}%, deposit states ${C.deposit.bevShare}%.<br>Estimate: count × deposit, on NOAA's survey stretch only. ${beach.dep ? 'Each was worth money back and was left on the sand.' : `${s.state} has no deposit; priced at 10¢ as in Oregon and Michigan.`}</div>
+      ${beach.coinN ? `<div class="ln you"><span>Your walk: ${beach.coinN} container${beach.coinN > 1 ? 's' : ''} sorted</span><span></span><span>${money(beach.coins)}</span></div>` : ''}
+      <div class="ft">Drink containers were ${s.bevShare == null ? 'not found' : s.bevShare + '%'} of the litter here${stShare != null ? ` (${s.state}: ${stShare}%)` : ''}. Overall: ${C.noDeposit.bevShare}% in no-deposit states, ${C.deposit.bevShare}% in deposit states.<br>Estimate at ${beach.dep ? "today's rate" : 'a 10¢ deposit, as in Oregon and Michigan'}: count × deposit, on NOAA's survey stretch only. An upper bound: not every container was redeemable (wine and liquor bottles, bottles that drifted in from far away).</div>
     </div>
     ${beach.cleaned ? `<div class="facts">
       <div><b>${beach.cleaned} / ${items.length}</b><span>items you cleaned on this stretch</span></div>
       <div><b>${Math.round(beach.firstTypes.size / Math.max(1, new Set([...beach.sorted, ...beach.missed]).size) * 100)}%</b><span>types sorted right the first time</span></div>
-      <div><b>${money(beach.coins)}</b><span>${beach.dep ? 'in deposits you picked up' : 'if they carried a 10¢ deposit'}</span></div>
+      <div><b>${beach.sorted.size} / ${info.types.length}</b><span>types of litter you sorted</span></div>
     </div>` : `<div class="muted" style="font-size:.86rem">Walk the strip first: drag a few items into the bins, and your own tally shows up here.</div>`}
     ${top && top.policy && top.policy !== 'deposit' ? `<div class="muted" style="font-size:.8rem">Also here: the biggest share was ${top.name.toLowerCase()} (${share}%). ${POLICY[top.policy] ? `The policy aimed at that, ${POLICY[top.policy].charAt(0).toLowerCase() + POLICY[top.policy].slice(1)}, is next on our list.` : ''}</div>` : ''}
     <div class="row2"><button class="btn" type="button" id="repEv">See the evidence and act</button><button class="btn ghost" type="button" id="repClose">Keep walking</button></div>
@@ -3567,7 +3569,7 @@ function buildEvidence() {
   const depS = D.states.filter(d => d.deposit), nonS = D.states.filter(d => !d.deposit);
   const mDep = +med(depS.map(d => d.bevShare)).toFixed(1), mNon = +med(nonS.map(d => d.bevShare)).toFixed(1), f1 = v => v.toFixed(1);
   document.getElementById('evHead').textContent = `Where states have no bottle deposit, drink containers make up ${(+C.ratio).toFixed(1)}× the share of beach litter`;
-  document.getElementById('evFact').textContent = `${fmt(sites.length)} beaches · ${fmt(C.deposit.surveys + C.noDeposit.surveys)} NOAA surveys, ${D.meta.years[0]}–${D.meta.years[1]} · ratio ${C.ratio}×, 95% CI ${C.ratioCI[0]}–${C.ratioCI[1]}×`;
+  document.getElementById('evFact').textContent = `${fmt(sites.length)} beaches · ${fmt(C.deposit.surveys + C.noDeposit.surveys)} NOAA surveys, ${D.meta.years[0]}–${D.meta.years[1]}`;
   document.getElementById('hShare').textContent = `No-deposit states: ${C.noDeposit.bevShare}% of beach debris is drink containers. Deposit states: ${C.deposit.bevShare}%.`;
   document.getElementById('hCaps').textContent = `Side check: caps per bottle (${C.deposit.capRatio} in deposit states vs ${C.noDeposit.capRatio}), mostly a Hawaii effect`;
   document.getElementById('hStates').textContent = `State by state: the typical no-deposit state is at ${f1(mNon)}%, the typical deposit state at ${f1(mDep)}%`;
@@ -3587,9 +3589,9 @@ function buildEvidence() {
   { const L2 = LEDGER, all = L2.dep[0] + L2.non[0];
     document.getElementById('evLedger').innerHTML = `<div class="kicker">The unclaimed ledger</div>
       <div class="big">${fmt(all)}<span>drink containers counted on NOAA's survey stretches</span></div>
-      <div class="lns"><div><b>${money(L2.dep[1])}</b><span>in real deposits left on the sand in deposit states (${fmt(L2.dep[0])} containers at 5–10¢)</span></div>
-      <div><b>${money(L2.non[1])}</b><span>more if the other states paid 10¢ (${fmt(L2.non[0])} containers)</span></div></div>
-      <div class="ft">An estimate: each container counted × its state's deposit. NOAA surveys short stretches of shore, so this is what a few volunteers found, not what all U.S. beaches hold.</div>`; }
+      <div class="lns"><div><b>${money(L2.dep[1])}</b><span>at today's deposit rates, left on deposit-state sand (${fmt(L2.dep[0])} containers at 5–10¢)</span></div>
+      <div><b>${money(L2.non[1])}</b><span>what the ${fmt(L2.non[0])} containers in states without a deposit would be worth at 10¢</span></div></div>
+      <div class="ft">An upper-bound estimate: each container counted × its state's deposit today. Not every one was redeemable (wine and liquor bottles, bottles that drifted in from far away, such as on Hawaii's shores), and NOAA surveys only short stretches of shore. Before you write, a sense of what's lying there.</div>`; }
   document.getElementById('takeAct').onclick = e => { e.preventDefault(); document.getElementById('act').scrollIntoView({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' }); };
   document.getElementById('stateLevel').innerHTML = `<b>Counting states instead of surveys:</b> the typical no-deposit state is at ${f1(mNon)}%, the typical deposit state at ${f1(mDep)}%, about ${stRatio}×. With only ${nonS.length} and ${depS.length} states, that is borderline (a rank test gives p ≈ 0.055).`;
   document.getElementById('limits').innerHTML = `
@@ -3679,6 +3681,7 @@ function beachReps(s) {
 }
 document.getElementById('repForm').addEventListener('submit', ev => { ev.preventDefault(); const q = document.getElementById('repAddr').value.trim(); window.open(q ? lookupURL(q) : 'https://open.pluralpolicy.com/find_your_legislator/', '_blank', 'noopener'); });
 function openEvidence(s, toAct) {
+  if (typeof sweep !== 'undefined' && sweep && sweep.running) sweep.finish();   // the opening never sits on top of the evidence
   if (!evBuilt) buildEvidence();
   s = s || (typeof beach !== 'undefined' && beach && beach.site) || lastSite;
   setNav(toAct ? 'navAct' : 'navEv'); intro2.classList.remove('on');
