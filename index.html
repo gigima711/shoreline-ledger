@@ -611,6 +611,9 @@ body.introRun #intro, body.introRun #marks, body.introRun #scrim, body.introRun 
 #report.v-b .receipt { padding: 18px 16px 16px; box-shadow: 0 20px 50px -20px rgba(0,0,0,.7); -webkit-mask: radial-gradient(circle 5px at 50% 0, transparent 98%, #000) 0 0 / 14px 51% repeat-x, radial-gradient(circle 5px at 50% 100%, transparent 98%, #000) 0 100% / 14px 51% repeat-x; mask: radial-gradient(circle 5px at 50% 0, transparent 98%, #000) 0 0 / 14px 51% repeat-x, radial-gradient(circle 5px at 50% 100%, transparent 98%, #000) 0 100% / 14px 51% repeat-x; }
 #report.v-b .receipt .tot b { font-size: 1.6rem; color: #b06a00; }
 #report.v-b .ico { display: flex; justify-content: center; gap: 22px; }
+#report.v-b .sign { display: grid; gap: 10px; } #report.v-b .sign input { height: 44px; font-size: 16px; padding: 0 14px; border-radius: 10px; border: 1px solid #ffffff2a; background: #0a1016e6; color: #fff; }
+#report.v-b .sign .sr { display: flex; align-items: center; gap: 10px; } #report.v-b .sign .btn { flex: 1; height: 44px; } #report.v-b .sign .skip { background: none; border: 0; color: #4cc9f0; font: 600 .92rem var(--font-body); cursor: pointer; padding: 0 10px; }
+@media (min-width: 761px) { #report.v-b .sign { grid-template-columns: 1fr auto; } }
 #report.v-b .ico button { background: none; border: 0; color: #dfe7ec; display: grid; justify-items: center; gap: 5px; cursor: pointer; font: 500 .66rem var(--font-body); }
 #report.v-b .ico i { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 20px; background: #ffffff14; border: 1px solid #ffffff1f; }
 #report.v-b .ico .pri i { background: linear-gradient(135deg, #4cc9f0, #9be3ff); color: #06121a; border: 0; }
@@ -2613,13 +2616,24 @@ function showReport() {
   report.onclick = e => { if (e.target === report) report.classList.remove('on'); };
   report.querySelectorAll('#repClose').forEach(b => b.onclick = () => report.classList.remove('on'));
   document.getElementById('repEv')?.addEventListener('click', () => { report.classList.remove('on'); openEvidence(s); });
-  document.getElementById('repCard').onclick = e => savePostcard(s, e.currentTarget);
+  document.getElementById('repCard').onclick = () => postcardForm(s, report.querySelector('.ico'));
+}
+// an optional signature, kept only in this browser; it signs the postcard and the letter
+const getSign = () => { try { return (localStorage.getItem('ledgerSign') || '').slice(0, 40); } catch (e) { return ''; } };
+const putSign = v => { try { v ? localStorage.setItem('ledgerSign', v) : localStorage.removeItem('ledgerSign'); } catch (e) {} };
+function postcardForm(s, ico) {
+  ico.outerHTML = `<form class="sign" id="signForm" autocomplete="off"><input id="signIn" maxlength="40" placeholder="Sign it (optional) · e.g. Alex, Madison" aria-label="Sign the postcard (optional)" value="${getSign().replace(/[&"<>]/g, c => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' })[c])}"><div class="sr"><button class="btn" type="submit" id="signSave">Save postcard</button><button type="button" class="skip" id="signSkip">Skip</button></div></form>`;
+  const f = document.getElementById('signForm'), inp = document.getElementById('signIn');
+  if (!COARSE) inp.focus();
+  const go = name => { putSign(name); savePostcard(s, document.getElementById('signSave'), name).then(() => setTimeout(() => report.classList.contains('on') && showReport(), 1600)); };
+  f.onsubmit = e => { e.preventDefault(); go(inp.value.trim().replace(/\s+/g, ' ').slice(0, 40)); };
+  document.getElementById('signSkip').onclick = () => savePostcard(s, document.getElementById('signSave'), '').then(() => setTimeout(() => report.classList.contains('on') && showReport(), 1600));
 }
 // a shareable 1200×1600 postcard of this beach's receipt, drawn in the browser (nothing is uploaded)
-async function savePostcard(s, btn) {
+async function savePostcard(s, btn, sign = '') {
   const lab = btn.querySelector('span') || (btn.classList.contains('pc') ? { textContent: '' } : btn), old = lab.textContent; lab.textContent = 'Drawing…'; btn.disabled = true;
   try {
-    await Promise.all(['600 64px "Source Serif 4"', '500 24px "IBM Plex Mono"', '400 24px "IBM Plex Sans"', '600 24px "IBM Plex Sans"'].map(f => document.fonts.load(f).catch(() => {})));
+    await Promise.all(['italic 500 44px "Source Serif 4"', '600 64px "Source Serif 4"', '500 24px "IBM Plex Mono"', '400 24px "IBM Plex Sans"', '600 24px "IBM Plex Sans"'].map(f => document.fonts.load(f).catch(() => {})));
     const W = 1200, H = 1600, PH = 900, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const x = cv.getContext('2d'), ph = PHOTOS[s.id], rate = depRate(s.state), bc = bevCounts(s), nBev = bc.reduce((a, [, v]) => a + v, 0), dep = D.depositStates[s.state];
     const SERIF = '"Source Serif 4", Georgia, serif', MONO = '"IBM Plex Mono", ui-monospace, monospace', SANS = '"IBM Plex Sans", system-ui, sans-serif';
@@ -2643,7 +2657,14 @@ async function savePostcard(s, btn) {
     // back: paper and receipt
     x.fillStyle = '#f7f3ea'; x.fillRect(0, PH, W, H - PH);
     x.fillStyle = '#7a6f5c'; x.font = `500 20px ${MONO}`; x.fillText('UNCLAIMED DEPOSIT RECEIPT', 64, PH + 70);
-    let y = PH + 130; x.font = `500 28px ${MONO}`; x.fillStyle = '#23272b';
+    // postmark: the date and what this visitor actually sorted (only their own actions, never NOAA's numbers)
+    { const cx = 1052, cy = PH + 78, r = 70, dt = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase().replace(',', '');
+      x.save(); x.translate(cx, cy); x.rotate(-8 * Math.PI / 180); x.globalAlpha = .85; x.strokeStyle = '#b06a00'; x.fillStyle = '#b06a00'; x.lineWidth = 2; x.setLineDash([6, 4]);
+      x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.stroke(); x.setLineDash([]); x.textAlign = 'center';
+      if (beach && beach.coinN) { x.font = `600 17px ${MONO}`; x.fillText(dt, 0, -18); x.font = `500 14px ${MONO}`; x.fillText('MY WALK', 0, 6); x.font = `600 20px ${MONO}`; x.fillText(`${beach.coinN} · ${money(beach.coins)}`, 0, 32); }
+      else { x.font = `600 17px ${MONO}`; x.fillText(dt, 0, 6); }
+      x.restore(); x.textAlign = 'left'; }
+    let y = PH + 190; x.font = `500 28px ${MONO}`; x.fillStyle = '#23272b';
     for (const [n, v] of bc) { x.textAlign = 'left'; x.fillText(n, 64, y); x.textAlign = 'right'; x.fillText(`${fmt(v)} × ${rate}¢`, W - 300, y); x.fillText(money(v * rate), W - 64, y); y += 48; }
     x.textAlign = 'left'; x.strokeStyle = '#b9b3a6'; x.setLineDash([8, 6]); x.beginPath(); x.moveTo(64, y - 18); x.lineTo(W - 64, y - 18); x.stroke(); x.setLineDash([]);
     y += 30; x.font = `600 36px ${MONO}`; x.fillText(dep ? 'UNCLAIMED DEPOSITS' : `IF ${s.state.toUpperCase()} PAID 10¢`, 64, y); x.textAlign = 'right'; x.fillText(money(nBev * rate), W - 64, y); x.textAlign = 'left';
@@ -2651,7 +2672,13 @@ async function savePostcard(s, btn) {
     y = wrap(`Drink containers were ${s.bevShare == null ? 'not found' : s.bevShare + '%'} of the litter here. Overall they are ${C.noDeposit.bevShare}% of beach litter in states without a bottle deposit and ${C.deposit.bevShare}% in states with one: about ${(+C.ratio).toFixed(1)}× the share, across ${fmt(C.deposit.surveys + C.noDeposit.surveys)} NOAA surveys.`, 64, y, W - 128, 36);
     x.font = `400 20px ${SANS}`; x.fillStyle = '#7a6f5c';
     y = wrap('A pattern, not proof. Upper-bound estimate: count × deposit on NOAA\'s survey stretch; not every container was redeemable.', 64, y + 10, W - 128, 28);
+    x.font = `400 20px ${SANS}`; x.fillStyle = '#7a6f5c';
     x.fillText('Made at gigima711.github.io/shoreline-ledger · Data: NOAA MDMAP', 64, H - 56);
+    if (sign) {   // signed bottom-right, beside the footer; shrinks, then trims, so it never reaches the footer text
+      const room = W - 64 - (64 + x.measureText('Made at gigima711.github.io/shoreline-ledger · Data: NOAA MDMAP').width) - 36;
+      let fs = 44; const t = `— ${sign}`; x.font = `italic 500 ${fs}px ${SERIF}`; while (x.measureText(t).width > room && fs > 28) { fs -= 2; x.font = `italic 500 ${fs}px ${SERIF}`; }
+      let tt = t; while (x.measureText(tt).width > room && tt.length > 4) tt = tt.slice(0, -2) + '…';
+      x.fillStyle = '#3a3f44'; x.textAlign = 'right'; x.fillText(tt, W - 64, H - 52); x.textAlign = 'left'; }
     if (ph) { const cr = `Photo: ${ph.a} · ${ph.l} · ${ph.site}`; x.font = `400 17px ${SANS}`; const cw = x.measureText(cr).width; x.fillStyle = 'rgba(3,8,14,.6)'; x.fillRect(W - cw - 40, 20, cw + 24, 30); x.fillStyle = '#e8eef1'; x.fillText(cr, W - cw - 28, 41); }
     const url = URL.createObjectURL(await new Promise(r => cv.toBlob(r, 'image/png')));
     const a = document.createElement('a'); a.href = url; a.download = `shoreline-ledger-${label(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.png`; document.body.appendChild(a); a.click(); a.remove();
@@ -3765,7 +3792,7 @@ I'm writing about litter on our shorelines. Across ${total} NOAA beach surveys, 
 Please support a beverage container deposit law, or protect and modernize the one we have.
 
 Sincerely,
-[Your name, your town]`; return; }
+${getSign() || '[Your name, your town]'}`; return; }
   const dep = D.depositStates[s.state], st = D.states.find(d => d.state === s.state);
   const cmpLine = s.items && s.bevShare != null ? (st ? ` Across ${s.state}'s NOAA beaches, drink containers make up ${st.bevShare}% of debris; at this beach they were ${s.bevShare}%.` : ` Drink containers were ${s.bevShare}% of them.`) : ' They found no litter, which is worth protecting.';
   document.getElementById('actHead').textContent = `Write for ${label(s)}`;
@@ -3781,7 +3808,7 @@ Across ${total} NOAA beach surveys, beaches in states without a bottle deposit c
 ${dep ? `${s.state} has had a bottle deposit since ${dep}. Please protect it and modernize it: raise the deposit to keep pace with inflation and cover more container types.` : `${s.state} has no bottle deposit. ${['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve'][Object.keys(D.depositStates).length] || Object.keys(D.depositStates).length} states do, some since the 1970s. Please support a beverage container deposit law for ${s.state}.`}
 
 Sincerely,
-[Your name, your town]`;
+${getSign() || '[Your name, your town]'}`;
 }
 let lastSite = null;
 function setNav(id) { document.querySelectorAll('#topbar nav a').forEach(a => a.classList.toggle('on', a.id === id)); }
